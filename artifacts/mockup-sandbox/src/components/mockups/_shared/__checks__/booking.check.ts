@@ -26,6 +26,7 @@ import {
 import {
   CANVAS,
   FIXTURES,
+  ROOM_OUTLINE,
   TABLES,
   ZONES,
   getZone,
@@ -484,6 +485,65 @@ for (const [name, f] of SOLID_FIXTURES) {
   check(
     `the ${name} is inside the room`,
     isInsideRoom(f.x, f.y) && isInsideRoom(f.x + f.w, f.y + f.h),
+  );
+}
+
+/* -------------------------------------------------------------- symmetry */
+
+/**
+ * "Looks balanced" is not something anyone can judge from a list of numbers,
+ * and the previous layout looked lopsided on a wide screen for reasons that
+ * were invisible in the data. Symmetry about the room's centre line is a
+ * property the numbers can carry, so it is asserted here.
+ */
+const AXIS = (ROOM_OUTLINE[0]![0] + ROOM_OUTLINE[1]![0]) / 2;
+
+check(
+  "the room is symmetric about its own centre line",
+  ROOM_OUTLINE.every(([x]) =>
+    ROOM_OUTLINE.some(([x2]) => Math.abs(2 * AXIS - x - x2) < 0.001),
+  ),
+  `axis ${AXIS}`,
+);
+
+check(
+  "the top band is three equal blocks",
+  new Set(SOLID_FIXTURES.map(([, f]) => f.w)).size === 1,
+  SOLID_FIXTURES.map(([n, f]) => `${n}:${f.w}`).join(" "),
+);
+
+check(
+  "the top band is centred",
+  Math.abs(FIXTURES.bar.x - (2 * AXIS - (FIXTURES.stage.x + FIXTURES.stage.w))) <
+    0.001,
+);
+
+// Every row of tables should mirror onto itself.
+const rows = new Map<number, Array<TableSpec>>();
+for (const t of TABLES) {
+  const row = rows.get(t.y) ?? [];
+  row.push(t);
+  rows.set(t.y, row);
+}
+
+for (const [y, row] of rows) {
+  const mirrored = row.every((t) =>
+    row.some(
+      (other) =>
+        Math.abs(2 * AXIS - t.x - other.x) < 0.001 && other.w === t.w,
+    ),
+  );
+  check(
+    `row y=${y} is symmetric about x=${AXIS}`,
+    mirrored,
+    row.map((t) => `${t.id}@${t.x}`).join(" "),
+  );
+}
+
+for (const w of FIXTURES.walkways) {
+  check(
+    `walkway ${w.id} is centred`,
+    Math.abs(w.x + w.w / 2 - AXIS) < 0.001,
   );
 }
 

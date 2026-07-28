@@ -14,11 +14,44 @@ export function holdsInventory(now: Date): SQL | undefined {
   );
 }
 
-/** Postgres SQLSTATE off an unknown driver error. */
+/**
+ * Postgres SQLSTATE off an unknown driver error.
+ *
+ * Drizzle wraps driver errors in its own error type, so the SQLSTATE is one or
+ * more `cause` links down rather than on the error it throws. Reading only the
+ * top level turned every unique-violation into a 500.
+ */
 export function pgErrorCode(err: unknown): string | undefined {
-  if (typeof err === "object" && err !== null && "code" in err) {
-    const code = (err as { code: unknown }).code;
-    return typeof code === "string" ? code : undefined;
+  let current = err;
+  for (let depth = 0; depth < 5 && current !== null && current !== undefined; depth++) {
+    if (typeof current === "object" && "code" in current) {
+      const code = (current as { code: unknown }).code;
+      if (typeof code === "string") {
+        return code;
+      }
+    }
+    current =
+      typeof current === "object" && "cause" in current
+        ? (current as { cause: unknown }).cause
+        : undefined;
+  }
+  return undefined;
+}
+
+/** The constraint a violation names, when the driver reports one. */
+export function pgConstraint(err: unknown): string | undefined {
+  let current = err;
+  for (let depth = 0; depth < 5 && current !== null && current !== undefined; depth++) {
+    if (typeof current === "object" && "constraint" in current) {
+      const name = (current as { constraint: unknown }).constraint;
+      if (typeof name === "string") {
+        return name;
+      }
+    }
+    current =
+      typeof current === "object" && "cause" in current
+        ? (current as { cause: unknown }).cause
+        : undefined;
   }
   return undefined;
 }

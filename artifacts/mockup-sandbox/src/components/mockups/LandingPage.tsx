@@ -90,7 +90,13 @@ const LINEUP = [
  * visitor scrolled through a five-step form they had not asked for. It is its
  * own screen now, reached only by pressing จองโต๊ะ.
  */
-function BookingScreen({ onBack }: { onBack: () => void }) {
+function BookingScreen({
+  onBack,
+  initialTableId,
+}: {
+  onBack: () => void;
+  initialTableId: string | null;
+}) {
   return (
     <div className="min-h-screen">
       <div className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur">
@@ -121,7 +127,7 @@ function BookingScreen({ onBack }: { onBack: () => void }) {
           </h2>
         </div>
 
-        <BookingFlow />
+        <BookingFlow initialTableId={initialTableId} />
       </div>
     </div>
   );
@@ -129,6 +135,7 @@ function BookingScreen({ onBack }: { onBack: () => void }) {
 
 export default function LandingPage() {
   const [booking, setBooking] = useState(false);
+  const [pickedTable, setPickedTable] = useState<string | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -144,7 +151,8 @@ export default function LandingPage() {
     return () => window.removeEventListener("popstate", onPop);
   }, [booking]);
 
-  function openBooking() {
+  function openBooking(tableId: string | null = null) {
+    setPickedTable(tableId);
     setBooking(true);
     setMenuOpen(false);
     setAuthOpen(false);
@@ -159,12 +167,14 @@ export default function LandingPage() {
   if (booking) {
     return (
       <BarTheme className="min-h-screen">
-        <BookingScreen onBack={closeBooking} />
+        <BookingScreen onBack={closeBooking} initialTableId={pickedTable} />
       </BarTheme>
     );
   }
 
-  const scrollToBooking = openBooking;
+  // Wrapped, not aliased: as a click handler directly, openBooking would take
+  // the MouseEvent as its table id.
+  const scrollToBooking = () => openBooking();
 
   return (
     <BarTheme className="min-h-screen">
@@ -259,28 +269,30 @@ export default function LandingPage() {
               รู้ว่าจะได้นั่งตรงไหน ก่อนจอง
             </h2>
             <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
-              ตอนจองจะเลือกโต๊ะเองได้จากผังนี้ ตั้งแต่ติดเวทีไปจนถึงห้องส่วนตัว
+              แตะโต๊ะสีเขียวที่ต้องการได้เลย ระบบจะพาไปหน้าจองพร้อมโต๊ะนั้น
             </p>
           </div>
 
           <div className="mt-10">
+            {/* Tap a table and go, the way a cinema seat map works. The plan
+                shows tonight; the booking screen still asks for the real date
+                and party size, and re-checks the table is free before payment. */}
             <FloorMap
-              readOnly
               dateKey={todayIso()}
               slot={PREVIEW_SLOT}
               guests={2}
               selectedTableId={null}
-              onSelect={() => undefined}
+              onSelect={openBooking}
             />
           </div>
 
           <div className="mt-8 text-center">
             <button
               type="button"
-              onClick={openBooking}
+              onClick={() => openBooking()}
               className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
             >
-              เลือกโต๊ะและจอง
+              เลือกวันและเวลาเอง
             </button>
           </div>
         </div>

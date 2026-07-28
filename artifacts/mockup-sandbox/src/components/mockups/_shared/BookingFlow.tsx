@@ -307,14 +307,23 @@ function StepContact({
 
 /* ------------------------------------------------------------------- shell */
 
-export function BookingFlow() {
+export function BookingFlow({
+  /**
+   * Pre-picked from the landing page's plan, the way a cinema seat map hands
+   * a seat straight to checkout. The guest still confirms date, party and
+   * time — the table is only carried forward, never assumed booked.
+   */
+  initialTableId = null,
+}: {
+  initialTableId?: string | null;
+} = {}) {
   const today = useMemo(startOfToday, []);
 
   const [step, setStep] = useState(0);
   const [date, setDate] = useState<Date | undefined>(today);
   const [slot, setSlot] = useState<string | null>(null);
   const [guests, setGuests] = useState(2);
-  const [tableId, setTableId] = useState<string | null>(null);
+  const [tableId, setTableId] = useState<string | null>(initialTableId);
   const [contact, setContact] = useState<ContactDraft>(EMPTY_CONTACT);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showAllErrors, setShowAllErrors] = useState(false);

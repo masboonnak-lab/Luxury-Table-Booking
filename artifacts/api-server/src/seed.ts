@@ -11,6 +11,7 @@ import {
   db,
   eventsTable,
   pool,
+  usersTable,
   venueTablesTable,
   zonesTable,
   type InsertVenueEvent,
@@ -18,6 +19,8 @@ import {
   type InsertZone,
 } from "@workspace/db";
 
+import { hashPassword, MIN_PASSWORD_LENGTH } from "./domain/password";
+import { normalisePhone } from "./domain/phone";
 import { logger } from "./lib/logger";
 
 const thb = (baht: number): number => baht * 100;
@@ -72,36 +75,34 @@ const ZONES: ReadonlyArray<InsertZone> = [
  * in `booking.check.ts` guard that file, and this table is what the API serves.
  */
 const TABLES: ReadonlyArray<InsertVenueTable> = [
-  // Counter seats, tucked under the bar at the top left.
-  { id: "B1", zoneId: "counter", shape: "rect", x: 11, y: 27, w: 7, h: 6, minSeats: 1, maxSeats: 4 },
-  { id: "B2", zoneId: "counter", shape: "rect", x: 19, y: 27, w: 7, h: 6, minSeats: 1, maxSeats: 4 },
-  { id: "B3", zoneId: "counter", shape: "rect", x: 27, y: 27, w: 7, h: 6, minSeats: 1, maxSeats: 4 },
-  { id: "B4", zoneId: "counter", shape: "rect", x: 35, y: 27, w: 7, h: 6, minSeats: 1, maxSeats: 4 },
+  // Counter seats under the bar, mirrored by the stage-front row.
+  { id: "B1", zoneId: "counter", shape: "rect", x: 17, y: 28, w: 8, h: 7, minSeats: 1, maxSeats: 4 },
+  { id: "B2", zoneId: "counter", shape: "rect", x: 26, y: 28, w: 8, h: 7, minSeats: 1, maxSeats: 4 },
+  { id: "B3", zoneId: "counter", shape: "rect", x: 35, y: 28, w: 8, h: 7, minSeats: 1, maxSeats: 4 },
+  { id: "B4", zoneId: "counter", shape: "rect", x: 44, y: 28, w: 8, h: 7, minSeats: 1, maxSeats: 4 },
 
   // Stage front — the row facing the stage, first to sell out.
-  { id: "S1", zoneId: "stage", shape: "rect", x: 60, y: 27, w: 9, h: 6, minSeats: 2, maxSeats: 6 },
-  { id: "S2", zoneId: "stage", shape: "rect", x: 70, y: 27, w: 9, h: 6, minSeats: 2, maxSeats: 6 },
-  { id: "S3", zoneId: "stage", shape: "rect", x: 80, y: 27, w: 9, h: 6, minSeats: 2, maxSeats: 6 },
-  { id: "S4", zoneId: "stage", shape: "rect", x: 90, y: 27, w: 9, h: 6, minSeats: 2, maxSeats: 6 },
+  { id: "S1", zoneId: "stage", shape: "rect", x: 56, y: 28, w: 8, h: 7, minSeats: 2, maxSeats: 6 },
+  { id: "S2", zoneId: "stage", shape: "rect", x: 65, y: 28, w: 8, h: 7, minSeats: 2, maxSeats: 6 },
+  { id: "S3", zoneId: "stage", shape: "rect", x: 74, y: 28, w: 8, h: 7, minSeats: 2, maxSeats: 6 },
+  { id: "S4", zoneId: "stage", shape: "rect", x: 83, y: 28, w: 8, h: 7, minSeats: 2, maxSeats: 6 },
 
-  // Main floor — two rows of four, split by the centre walkway.
-  { id: "T1", zoneId: "table", shape: "rect", x: 14, y: 40, w: 12, h: 10, minSeats: 2, maxSeats: 6 },
-  { id: "T2", zoneId: "table", shape: "rect", x: 28, y: 40, w: 12, h: 10, minSeats: 2, maxSeats: 6 },
-  { id: "T3", zoneId: "table", shape: "rect", x: 42, y: 40, w: 12, h: 10, minSeats: 2, maxSeats: 6 },
-  { id: "T4", zoneId: "table", shape: "rect", x: 56, y: 40, w: 12, h: 10, minSeats: 2, maxSeats: 6 },
-  { id: "T5", zoneId: "table", shape: "rect", x: 14, y: 52, w: 12, h: 10, minSeats: 2, maxSeats: 6 },
-  { id: "T6", zoneId: "table", shape: "rect", x: 28, y: 52, w: 12, h: 10, minSeats: 2, maxSeats: 6 },
-  { id: "T7", zoneId: "table", shape: "rect", x: 42, y: 52, w: 12, h: 10, minSeats: 2, maxSeats: 6 },
-  { id: "T8", zoneId: "table", shape: "rect", x: 56, y: 52, w: 12, h: 10, minSeats: 2, maxSeats: 6 },
+  // Main floor — two rows of four, centred on the room.
+  { id: "T1", zoneId: "table", shape: "rect", x: 20, y: 45, w: 16, h: 11, minSeats: 2, maxSeats: 6 },
+  { id: "T2", zoneId: "table", shape: "rect", x: 40, y: 45, w: 16, h: 11, minSeats: 2, maxSeats: 6 },
+  { id: "T3", zoneId: "table", shape: "rect", x: 60, y: 45, w: 16, h: 11, minSeats: 2, maxSeats: 6 },
+  { id: "T4", zoneId: "table", shape: "rect", x: 80, y: 45, w: 16, h: 11, minSeats: 2, maxSeats: 6 },
+  { id: "T5", zoneId: "table", shape: "rect", x: 20, y: 58, w: 16, h: 11, minSeats: 2, maxSeats: 6 },
+  { id: "T6", zoneId: "table", shape: "rect", x: 40, y: 58, w: 16, h: 11, minSeats: 2, maxSeats: 6 },
+  { id: "T7", zoneId: "table", shape: "rect", x: 60, y: 58, w: 16, h: 11, minSeats: 2, maxSeats: 6 },
+  { id: "T8", zoneId: "table", shape: "rect", x: 80, y: 58, w: 16, h: 11, minSeats: 2, maxSeats: 6 },
 
-  // Private rooms, stacked down the right-hand wall.
-  { id: "V1", zoneId: "vip", shape: "rect", x: 82, y: 39, w: 22, h: 11, minSeats: 6, maxSeats: 20 },
-  { id: "V2", zoneId: "vip", shape: "rect", x: 82, y: 51, w: 22, h: 11, minSeats: 6, maxSeats: 20 },
-
-  // Sofa lounge across the back, behind the main walkway.
-  { id: "L1", zoneId: "lounge", shape: "rect", x: 16, y: 68, w: 20, h: 13, minSeats: 4, maxSeats: 10 },
-  { id: "L2", zoneId: "lounge", shape: "rect", x: 38, y: 68, w: 20, h: 13, minSeats: 4, maxSeats: 10 },
-  { id: "L3", zoneId: "lounge", shape: "rect", x: 60, y: 68, w: 20, h: 13, minSeats: 4, maxSeats: 10 },
+  // Back row: a private room at each end, the sofas between them.
+  { id: "V1", zoneId: "vip", shape: "rect", x: 14, y: 76, w: 16, h: 12, minSeats: 6, maxSeats: 20 },
+  { id: "L1", zoneId: "lounge", shape: "rect", x: 32, y: 76, w: 16, h: 12, minSeats: 4, maxSeats: 10 },
+  { id: "L2", zoneId: "lounge", shape: "rect", x: 50, y: 76, w: 16, h: 12, minSeats: 4, maxSeats: 10 },
+  { id: "L3", zoneId: "lounge", shape: "rect", x: 68, y: 76, w: 16, h: 12, minSeats: 4, maxSeats: 10 },
+  { id: "V2", zoneId: "vip", shape: "rect", x: 86, y: 76, w: 16, h: 12, minSeats: 6, maxSeats: 20 },
 ];
 
 /**
@@ -208,10 +209,65 @@ async function seed(): Promise<void> {
       },
     });
 
+  await seedAdmin();
+
   logger.info(
     { zones: ZONES.length, tables: TABLES.length, events: EVENTS.length },
     "Seed complete",
   );
+}
+
+/**
+ * The first admin, because there is no other way to become one — the API only
+ * lets an existing admin promote somebody. Credentials come from the
+ * environment so they are never committed, and the account is only created
+ * when all three are set.
+ */
+async function seedAdmin(): Promise<void> {
+  const phone = process.env["ADMIN_PHONE"];
+  const email = process.env["ADMIN_EMAIL"];
+  const password = process.env["ADMIN_PASSWORD"];
+
+  if (!phone || !email || !password) {
+    logger.info(
+      "ADMIN_PHONE / ADMIN_EMAIL / ADMIN_PASSWORD not all set — no admin seeded",
+    );
+    return;
+  }
+
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    throw new Error(
+      `ADMIN_PASSWORD must be at least ${MIN_PASSWORD_LENGTH} characters`,
+    );
+  }
+
+  const digits = normalisePhone(phone);
+  const now = new Date();
+  const passwordHash = await hashPassword(password);
+
+  await db
+    .insert(usersTable)
+    .values({
+      name: process.env["ADMIN_NAME"] ?? "ผู้ดูแลระบบ",
+      phone: digits,
+      email: email.trim().toLowerCase(),
+      role: "admin",
+      passwordHash,
+      pdpaConsentAt: now,
+    })
+    .onConflictDoUpdate({
+      target: usersTable.phone,
+      // Re-running the seed resets the admin password, which is the intended
+      // recovery path when it is lost.
+      set: {
+        role: incoming("role"),
+        email: incoming("email"),
+        passwordHash: incoming("password_hash"),
+        updatedAt: incoming("updated_at"),
+      },
+    });
+
+  logger.info({ phone: digits }, "Admin account ready");
 }
 
 seed()

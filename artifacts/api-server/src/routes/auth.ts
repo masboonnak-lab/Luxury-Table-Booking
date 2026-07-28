@@ -20,7 +20,7 @@ import {
   UpdateProfileResponse,
 } from "@workspace/api-zod";
 
-import { pgErrorCode, UNIQUE_VIOLATION } from "../domain/holds";
+import { pgConstraint, pgErrorCode, UNIQUE_VIOLATION } from "../domain/holds";
 import { viewAll } from "../domain/order-lookup";
 import { hashPassword, verifyPassword } from "../domain/password";
 import { isThaiPhone, normalisePhone } from "../domain/phone";
@@ -150,10 +150,10 @@ router.post("/auth/register", async (req, res) => {
     .catch((err: unknown) => {
       if (pgErrorCode(err) === UNIQUE_VIOLATION) {
         // Two unique columns can trip; say which so the guest can act on it.
-        const taken = String(err).includes("email") ? "email" : "phone";
+        const onEmail = pgConstraint(err)?.includes("email") ?? false;
         throw conflict(
-          taken === "email" ? "email_taken" : "phone_taken",
-          taken === "email"
+          onEmail ? "email_taken" : "phone_taken",
+          onEmail
             ? "อีเมลนี้สมัครสมาชิกไว้แล้ว กรุณาเข้าสู่ระบบ"
             : "เบอร์โทรนี้สมัครสมาชิกไว้แล้ว กรุณาเข้าสู่ระบบ",
         );
