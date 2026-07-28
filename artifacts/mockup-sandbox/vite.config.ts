@@ -4,6 +4,34 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { mockupPreviewPlugin } from "./mockupPreviewPlugin";
+import { BRAND } from "./src/components/mockups/_shared/brand";
+
+/**
+ * When one mockup is deployed as a real site (VITE_MOCKUP_ENTRY), the sandbox's
+ * "Mockup Canvas" title and 🎨 favicon are wrong in a way visitors can see.
+ * Swap in the venue's identity from the brand config.
+ */
+function brandedHtmlPlugin() {
+  const entry = process.env.VITE_MOCKUP_ENTRY;
+
+  return {
+    name: "branded-index-html",
+    transformIndexHtml(html: string): string {
+      if (!entry) {
+        return html;
+      }
+      const title = `${BRAND.venueName} · ${BRAND.venueTagline}`;
+      return html
+        .replace(/<html lang="en"/, '<html lang="th"')
+        .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
+        .replace(/content="Mockup Canvas"/g, `content="${BRAND.venueName}"`)
+        .replace(
+          /content="UI prototyping sandbox with infinite canvas"/g,
+          `content="${BRAND.venueTagline}"`,
+        );
+    },
+  };
+}
 
 const rawPort = process.env.PORT;
 
@@ -19,6 +47,10 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
+// Replit binds IPv4-only. On hosts where `localhost` resolves to ::1 first
+// (e.g. Windows), browsers hit IPv6 and get refused — set HOST=:: to dual-stack.
+const host = process.env.HOST ?? "0.0.0.0";
+
 const basePath = process.env.BASE_PATH;
 
 if (!basePath) {
@@ -31,6 +63,7 @@ export default defineConfig({
   base: basePath,
   plugins: [
     mockupPreviewPlugin(),
+    brandedHtmlPlugin(),
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),
@@ -52,12 +85,15 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist"),
+    // Cloudflare Workers map a URL path onto a file path under the assets
+    // directory, so a site living at /entertainment/club must be built into a
+    // matching folder. OUT_DIR is how that is asked for.
+    outDir: path.resolve(import.meta.dirname, process.env.OUT_DIR ?? "dist"),
     emptyOutDir: true,
   },
   server: {
     port,
-    host: "0.0.0.0",
+    host,
     allowedHosts: true,
     fs: {
       strict: true,
@@ -65,7 +101,7 @@ export default defineConfig({
   },
   preview: {
     port,
-    host: "0.0.0.0",
+    host,
     allowedHosts: true,
   },
 });

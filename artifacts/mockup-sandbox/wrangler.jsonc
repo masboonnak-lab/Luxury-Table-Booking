@@ -1,0 +1,29 @@
+{
+  // Assets-only Worker: no server code, it just serves the built files.
+  //
+  // The route claims ONLY /entertainment/club*, so every other path on
+  // sovereign-os.online keeps going to the existing origin untouched.
+  //
+  // Build first — the folder layout under ./dist has to mirror the URL path,
+  // because Workers resolve /entertainment/club/assets/x.js to
+  // dist/entertainment/club/assets/x.js:
+  //
+  //   pnpm --filter @workspace/mockup-sandbox run build:club
+  //   pnpm dlx wrangler deploy --config artifacts/mockup-sandbox/wrangler.jsonc
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "club-landing",
+  "compatibility_date": "2026-07-01",
+  "assets": {
+    "directory": "./dist",
+    // The landing page has no client-side routing, so an unknown path should
+    // 404 rather than silently render the landing page under a wrong URL.
+    "not_found_handling": "none",
+    "html_handling": "auto-trailing-slash"
+  },
+  "routes": [
+    {
+      "pattern": "sovereign-os.online/entertainment/club*",
+      "zone_name": "sovereign-os.online"
+    }
+  ]
+}

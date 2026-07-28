@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
+    "build:club": "node ./build-club.mjs",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

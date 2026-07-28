@@ -1,0 +1,81 @@
+name: Deploy landing page
+
+# Every push to main is a candidate deploy, but nothing ships unless the
+# checks pass first — a broken build must never replace a working site.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A newer push makes an in-flight deploy pointless; cancel it rather than
+# racing two uploads to the same route.
+concurrency:
+  group: deploy-landing
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        # corepack ships with Node, so no third-party action is needed here.
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.25.0 --activate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Booking logic checks
+        run: pnpm --filter @workspace/api-server run check:booking
+
+      - name: Build landing page
+        run: pnpm --filter @workspace/mockup-sandbox run build:club
+
+      - name: Check Cloudflare credentials
+        # Fail here with an explanation rather than letting wrangler die with
+        # an opaque auth error.
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::Missing repository secret CLOUDFLARE_API_TOKEN."
+            echo "Add it under Settings > Secrets and variables > Actions."
+            echo "Create the token at dash.cloudflare.com with the 'Edit Cloudflare Workers' template."
+            echo "Add CLOUDFLARE_ACCOUNT_ID the same way if the token covers more than one account."
+            exit 1
+          fi
+
+      - name: Deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm dlx wrangler@4 deploy --config artifacts/mockup-sandbox/wrangler.jsonc
+
+      - name: Verify the site is live
+        # Deploying without checking is how a broken route goes unnoticed.
+        run: |
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' https://sovereign-os.online/entertainment/club/)
+            if [ "$code" = "200" ]; then
+              echo "live (HTTP $code)"
+              exit 0
+            fi
+            echo "attempt $i: HTTP $code — retrying"
+            sleep 10
+          done
+          echo "site did not return 200 after deploy"
+          exit 1

@@ -128,8 +128,15 @@ function getPreviewPath(): string | null {
   return match ? match[1] : null;
 }
 
+/**
+ * Set VITE_MOCKUP_ENTRY to deploy one mockup as a real site: the named
+ * component then renders at the base path instead of the gallery. Unset — the
+ * normal case — nothing changes and /preview/* still works either way.
+ */
+const ENTRY_COMPONENT = import.meta.env["VITE_MOCKUP_ENTRY"] || null;
+
 function App() {
-  const previewPath = getPreviewPath();
+  const previewPath = getPreviewPath() ?? ENTRY_COMPONENT;
 
   if (previewPath) {
     return (
