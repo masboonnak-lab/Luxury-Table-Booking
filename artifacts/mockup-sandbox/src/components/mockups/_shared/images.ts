@@ -7,6 +7,16 @@ function unsplash(id: string, width: number): string {
   return `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${width}&q=70`;
 }
 
+/**
+ * A structural type, not `typeof PHOTOS[keyof typeof PHOTOS]`: that inferred a
+ * union of the exact alt strings below, so nothing outside this file could
+ * ever supply an image.
+ */
+export interface Photo {
+  src: string;
+  alt: string;
+}
+
 export const PHOTOS = {
   /** Warm bar interior, edison bulbs — landscape. */
   interiorWide: {
@@ -35,6 +45,4 @@ export const PHOTOS = {
     src: unsplash("1517620430776-0ec904756579", 800),
     alt: "ไฮบอลสมุนไพรบนโต๊ะไม้",
   },
-} as const;
-
-export type Photo = (typeof PHOTOS)[keyof typeof PHOTOS];
+} as const satisfies Record<string, Photo>;

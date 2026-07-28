@@ -20,6 +20,7 @@ import { AuthDialog } from "./_shared/AuthDialog";
 import { BarTheme, Eyebrow } from "./_shared/BarTheme";
 import { BookingFlow } from "./_shared/BookingFlow";
 import { FloorMap } from "./_shared/FloorMap";
+import { LineupBoard } from "./_shared/LineupBoard";
 import { MenuDialog } from "./_shared/MenuDialog";
 import { Photo } from "./_shared/Photo";
 import { SwipeItem, SwipeRow } from "./_shared/SwipeRow";
@@ -364,9 +365,28 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Lineup */}
+      {/* Gig board */}
       <section className="border-b border-border">
-        <div className="mx-auto max-w-3xl px-6 py-20">
+        <div className="mx-auto max-w-5xl px-6 py-20">
+          <div className="text-center">
+            <Eyebrow>ตารางศิลปิน</Eyebrow>
+            <h2 className="mt-4 font-['Playfair_Display',serif] text-3xl font-medium">
+              ใครขึ้นเวที คืนไหน
+            </h2>
+            <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
+              แตะที่การ์ดเพื่อดูรายละเอียดรอบการแสดง เวลาเปิดประตู และค่าเข้า
+            </p>
+          </div>
+
+          <div className="mt-10">
+            <LineupBoard />
+          </div>
+        </div>
+      </section>
+
+      {/* Weekly residency */}
+      <section className="border-b border-border">
+        <div className="mx-auto max-w-3xl px-6 py-16">
           <div className="text-center">
             <Eyebrow>ดนตรีประจำสัปดาห์</Eyebrow>
           </div>
