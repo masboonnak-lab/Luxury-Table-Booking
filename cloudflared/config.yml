@@ -26,8 +26,8 @@
 # page still loads, because that is static on Cloudflare's edge, but signing
 # in and booking stop working.
 
-tunnel: PUT-YOUR-TUNNEL-UUID-HERE
-credentials-file: C:\Users\n6351\.cloudflared\PUT-YOUR-TUNNEL-UUID-HERE.json
+tunnel: 1aad5138-a27e-4ee2-bd6b-f0c3c81ca2bc
+credentials-file: C:\Users\n6351\.cloudflared\1aad5138-a27e-4ee2-bd6b-f0c3c81ca2bc.json
 
 ingress:
   # The API. 5100 because something else on this machine already holds 5000.

@@ -27,7 +27,7 @@
   "vars": {
     // Set to the Render service URL once it exists, then redeploy. Until then
     // the Worker answers /api with a clear 503 rather than a broken page.
-    "API_ORIGIN": ""
+    "API_ORIGIN": "https://api.sovereign-os.online"
   },
   "routes": [
     {
