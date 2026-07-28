@@ -248,6 +248,43 @@ export default function LandingPage() {
         </div>
       </header>
 
+      {/* Floor plan — the room itself, first: where you sit is the decision a
+          visitor is actually making. */}
+      <section className="border-b border-border">
+        <div className="mx-auto max-w-4xl px-6 py-20">
+          <div className="text-center">
+            <Eyebrow>ผังร้าน</Eyebrow>
+            <h2 className="mt-4 font-['Playfair_Display',serif] text-3xl font-medium">
+              รู้ว่าจะได้นั่งตรงไหน ก่อนจอง
+            </h2>
+            <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
+              ตอนจองจะเลือกโต๊ะเองได้จากผังนี้ ตั้งแต่ติดเวทีไปจนถึงห้องส่วนตัว
+            </p>
+          </div>
+
+          <div className="mt-10">
+            <FloorMap
+              readOnly
+              dateKey={todayIso()}
+              slot={PREVIEW_SLOT}
+              guests={2}
+              selectedTableId={null}
+              onSelect={() => undefined}
+            />
+          </div>
+
+          <div className="mt-8 text-center">
+            <button
+              type="button"
+              onClick={openBooking}
+              className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+            >
+              เลือกโต๊ะและจอง
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* Signatures */}
       <section className="border-b border-border">
         <div className="mx-auto max-w-5xl px-6 py-20">
@@ -324,42 +361,6 @@ export default function LandingPage() {
               </SwipeItem>
             ))}
           </SwipeRow>
-        </div>
-      </section>
-
-      {/* Floor plan — the room itself, rather than a description of it */}
-      <section className="border-b border-border">
-        <div className="mx-auto max-w-4xl px-6 py-20">
-          <div className="text-center">
-            <Eyebrow>ผังร้าน</Eyebrow>
-            <h2 className="mt-4 font-['Playfair_Display',serif] text-3xl font-medium">
-              รู้ว่าจะได้นั่งตรงไหน ก่อนจอง
-            </h2>
-            <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
-              ตอนจองจะเลือกโต๊ะเองได้จากผังนี้ ตั้งแต่ติดเวทีไปจนถึงห้องส่วนตัว
-            </p>
-          </div>
-
-          <div className="mt-10">
-            <FloorMap
-              readOnly
-              dateKey={todayIso()}
-              slot={PREVIEW_SLOT}
-              guests={2}
-              selectedTableId={null}
-              onSelect={() => undefined}
-            />
-          </div>
-
-          <div className="mt-8 text-center">
-            <button
-              type="button"
-              onClick={scrollToBooking}
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-            >
-              เลือกโต๊ะและจอง
-            </button>
-          </div>
         </div>
       </section>
 
