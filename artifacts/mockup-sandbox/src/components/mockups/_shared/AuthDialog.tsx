@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { ShieldCheck, X } from "lucide-react";
+import { AlertTriangle, Loader2, ShieldCheck, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
+import { api, ApiError, type AuthUser } from "./api";
 import { normalisePhone } from "./booking";
 
 type Mode = "login" | "register";
@@ -86,9 +87,11 @@ const inputClass =
 export function AuthDialog({
   open,
   onClose,
+  onSignedIn,
 }: {
   open: boolean;
   onClose: () => void;
+  onSignedIn?: (user: AuthUser) => void;
 }) {
   const [mode, setMode] = useState<Mode>("login");
   const [values, setValues] = useState<Values>({
@@ -99,7 +102,8 @@ export function AuthDialog({
     consent: false,
   });
   const [errors, setErrors] = useState<Errors>({});
-  const [submitted, setSubmitted] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -123,25 +127,55 @@ export function AuthDialog({
 
   function set<K extends keyof Values>(key: K, value: Values[K]) {
     setValues((prev) => ({ ...prev, [key]: value }));
-    setSubmitted(false);
+    setServerError(null);
   }
 
   function switchMode(next: Mode) {
     setMode(next);
     setErrors({});
-    setSubmitted(false);
+    setServerError(null);
   }
 
-  function submit() {
+  async function submit() {
     const next = validate(mode, values);
     setErrors(next);
     if (Object.keys(next).length > 0) {
       return;
     }
-    // The account API exists (POST /api/auth/login | /auth/register) but this
-    // page is served as static files with no server behind it yet, so saying
-    // "signed in" here would be a lie.
-    setSubmitted(true);
+
+    setPending(true);
+    setServerError(null);
+    try {
+      const user =
+        mode === "login"
+          ? await api.login({
+              phone: values.phone.trim(),
+              password: values.password,
+            })
+          : await api.register({
+              name: values.name.trim(),
+              phone: values.phone.trim(),
+              email: values.email.trim(),
+              password: values.password,
+              pdpaConsent: values.consent,
+            });
+
+      onSignedIn?.(user);
+      onClose();
+    } catch (err) {
+      // Field-specific server answers belong on the field, not in a banner.
+      if (err instanceof ApiError && err.code === "phone_taken") {
+        setErrors({ phone: err.message });
+      } else if (err instanceof ApiError && err.code === "email_taken") {
+        setErrors({ email: err.message });
+      } else {
+        setServerError(
+          err instanceof ApiError ? err.message : "เกิดข้อผิดพลาด กรุณาลองใหม่",
+        );
+      }
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -279,16 +313,18 @@ export function AuthDialog({
 
         <button
           type="button"
-          onClick={submit}
-          className="mt-6 w-full rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          onClick={() => void submit()}
+          disabled={pending}
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
         >
+          {pending ? <Loader2 className="size-4 animate-spin" /> : null}
           {mode === "login" ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}
         </button>
 
-        {submitted ? (
-          <p className="mt-4 rounded-md border border-border bg-background/50 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
-            ข้อมูลถูกต้องครบถ้วน — แต่หน้านี้ยังเป็นไฟล์สแตติก
-            ยังไม่ได้ต่อกับเซิร์ฟเวอร์บัญชีผู้ใช้ จึงยังเข้าสู่ระบบจริงไม่ได้
+        {serverError ? (
+          <p className="mt-4 flex items-start gap-2 rounded-md border border-destructive/60 px-3 py-2.5 text-xs leading-relaxed text-destructive">
+            <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+            {serverError}
           </p>
         ) : null}
       </div>

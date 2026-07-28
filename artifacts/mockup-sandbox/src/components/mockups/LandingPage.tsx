@@ -6,6 +6,7 @@ import {
   ExternalLink,
   Facebook,
   Instagram,
+  LogOut,
   Mail,
   MapPin,
   MessageCircle,
@@ -24,6 +25,7 @@ import { LineupBoard } from "./_shared/LineupBoard";
 import { MenuDialog } from "./_shared/MenuDialog";
 import { Photo } from "./_shared/Photo";
 import { SwipeItem, SwipeRow } from "./_shared/SwipeRow";
+import { useSession } from "./_shared/useSession";
 import { formatThb } from "./_shared/booking";
 import { todayIso } from "./_shared/forms";
 import { PHOTOS } from "./_shared/images";
@@ -134,6 +136,7 @@ function BookingScreen({
 }
 
 export default function LandingPage() {
+  const session = useSession();
   const [booking, setBooking] = useState(false);
   const [pickedTable, setPickedTable] = useState<string | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
@@ -188,14 +191,31 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              type="button"
-              onClick={() => setAuthOpen(true)}
-              className="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 sm:px-4"
-            >
-              <UserRound className="size-3.5" />
-              <span className="hidden sm:inline">เข้าสู่ระบบ</span>
-            </button>
+            {session.state.status === "signed-in" ? (
+              <div className="flex items-center gap-2">
+                <span className="hidden max-w-[10rem] truncate text-xs text-muted-foreground sm:inline">
+                  {session.state.user.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void session.signOut()}
+                  className="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground transition-colors hover:border-primary hover:text-primary sm:px-4"
+                >
+                  <LogOut className="size-3.5" />
+                  <span className="hidden sm:inline">ออกจากระบบ</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAuthOpen(true)}
+                disabled={session.state.status === "loading"}
+                className="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-50 sm:px-4"
+              >
+                <UserRound className="size-3.5" />
+                <span className="hidden sm:inline">เข้าสู่ระบบ</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={scrollToBooking}
@@ -207,7 +227,11 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      <AuthDialog open={authOpen} onClose={() => setAuthOpen(false)} />
+      <AuthDialog
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        onSignedIn={session.signedIn}
+      />
       <MenuDialog open={menuOpen} onClose={() => setMenuOpen(false)} />
 
       {/* Hero */}

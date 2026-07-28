@@ -98,6 +98,16 @@ export default defineConfig({
     fs: {
       strict: true,
     },
+    // The session is an httpOnly cookie. Proxying keeps /api same-origin, so
+    // the browser stores and sends it without SameSite=None and HTTPS on both
+    // ends — the setup that works locally and fails in production, or vice
+    // versa. Production must serve the API under the same hostname too.
+    proxy: {
+      "/api": {
+        target: process.env.API_TARGET ?? "http://127.0.0.1:5100",
+        changeOrigin: false,
+      },
+    },
   },
   preview: {
     port,
