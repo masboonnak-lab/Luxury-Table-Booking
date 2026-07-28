@@ -10,10 +10,13 @@ type Mode = "login" | "register";
 /** Matches the server's `registerBodyPasswordMin`. */
 const MIN_PASSWORD = 8;
 const PHONE = /^0\d{8,9}$/;
+/** Matches the pattern the API validates against. */
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 interface Values {
   name: string;
   phone: string;
+  email: string;
   password: string;
   consent: boolean;
 }
@@ -25,6 +28,17 @@ function validate(mode: Mode, v: Values): Errors {
 
   if (mode === "register" && v.name.trim().length < 2) {
     errors.name = "กรุณากรอกชื่อ-นามสกุล";
+  }
+
+  // Required, not optional: it is the only way to reach a guest with a receipt
+  // or a booking change once they have left the venue.
+  if (mode === "register") {
+    const email = v.email.trim();
+    if (!email) {
+      errors.email = "กรุณากรอกอีเมล";
+    } else if (!EMAIL.test(email)) {
+      errors.email = "รูปแบบอีเมลไม่ถูกต้อง";
+    }
   }
 
   const phone = normalisePhone(v.phone);
@@ -80,6 +94,7 @@ export function AuthDialog({
   const [values, setValues] = useState<Values>({
     name: "",
     phone: "",
+    email: "",
     password: "",
     consent: false,
   });
@@ -211,6 +226,20 @@ export function AuthDialog({
               className={inputClass}
             />
           </Field>
+
+          {mode === "register" ? (
+            <Field label="อีเมล" error={errors.email}>
+              <input
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                value={values.email}
+                onChange={(e) => set("email", e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          ) : null}
 
           <Field label="รหัสผ่าน" error={errors.password}>
             <input

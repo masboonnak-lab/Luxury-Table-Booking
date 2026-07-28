@@ -116,12 +116,15 @@ export function FloorMap({
   guests,
   selectedTableId,
   onSelect,
+  /** Show the room without offering to book it — used on the landing page. */
+  readOnly = false,
 }: {
   dateKey: string;
   slot: string;
   guests: number;
   selectedTableId: string | null;
   onSelect: (tableId: string) => void;
+  readOnly?: boolean;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
 
@@ -221,7 +224,8 @@ export function FloorMap({
             {/* Tables */}
             {TABLES.map((t) => {
               const state = stateOf(t, dateKey, slot, guests, selectedTableId);
-              const interactive = state === "open" || state === "selected";
+              const interactive =
+                !readOnly && (state === "open" || state === "selected");
               const zone = getZone(t.zoneId);
 
               const title = `${t.id} · ${zone?.name ?? ""} · ${t.minSeats}–${t.maxSeats} ท่าน · ${
@@ -306,7 +310,9 @@ export function FloorMap({
         </div>
       </div>
 
-      {/* Focused table detail */}
+      {/* Focused table detail — a preview has nothing to select, so it says
+          what the room is instead of what you picked. */}
+      {readOnly ? null : (
       <div className="mt-3 min-h-[4.5rem] rounded-lg border border-border bg-card p-3.5">
         {focusTable && focusZone ? (
           <div className="flex items-start justify-between gap-3">
@@ -342,6 +348,7 @@ export function FloorMap({
           </p>
         )}
       </div>
+      )}
     </div>
   );
 }

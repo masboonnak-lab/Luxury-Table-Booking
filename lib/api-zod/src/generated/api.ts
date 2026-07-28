@@ -399,8 +399,11 @@ export const registerBodyNameMax = 120;
 export const registerBodyPhoneMin = 9;
 export const registerBodyPhoneMax = 20;
 
+export const registerBodyEmailMin = 5;
 export const registerBodyEmailMax = 254;
 
+
+export const registerBodyEmailRegExp = new RegExp('^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$');
 export const registerBodyPasswordMin = 8;
 export const registerBodyPasswordMax = 200;
 
@@ -409,7 +412,7 @@ export const registerBodyPasswordMax = 200;
 export const RegisterBody = zod.object({
   "name": zod.string().min(registerBodyNameMin).max(registerBodyNameMax),
   "phone": zod.string().min(registerBodyPhoneMin).max(registerBodyPhoneMax),
-  "email": zod.string().max(registerBodyEmailMax).optional(),
+  "email": zod.string().min(registerBodyEmailMin).max(registerBodyEmailMax).regex(registerBodyEmailRegExp),
   "password": zod.string().min(registerBodyPasswordMin).max(registerBodyPasswordMax),
   "pdpaConsent": zod.boolean().describe('Must be true. The server records when it was given.')
 })
@@ -418,8 +421,11 @@ export const RegisterResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "phone": zod.string(),
-  "email": zod.string().optional(),
-  "createdAt": zod.coerce.date()
+  "email": zod.string(),
+  "role": zod.enum(['member', 'admin']),
+  "suspended": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "lastLoginAt": zod.coerce.date().optional()
 }).describe('Never carries the password hash or the session token.')
 
 
@@ -442,8 +448,11 @@ export const LoginResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "phone": zod.string(),
-  "email": zod.string().optional(),
-  "createdAt": zod.coerce.date()
+  "email": zod.string(),
+  "role": zod.enum(['member', 'admin']),
+  "suspended": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "lastLoginAt": zod.coerce.date().optional()
 }).describe('Never carries the password hash or the session token.')
 
 
@@ -461,8 +470,98 @@ export const GetCurrentUserResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "phone": zod.string(),
-  "email": zod.string().optional(),
-  "createdAt": zod.coerce.date()
+  "email": zod.string(),
+  "role": zod.enum(['member', 'admin']),
+  "suspended": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "lastLoginAt": zod.coerce.date().optional()
 }).describe('Never carries the password hash or the session token.')
+
+
+/**
+ * @summary Change your own name or email
+ */
+export const updateProfileBodyNameMin = 2;
+export const updateProfileBodyNameMax = 120;
+
+export const updateProfileBodyEmailMin = 5;
+export const updateProfileBodyEmailMax = 254;
+
+
+export const updateProfileBodyEmailRegExp = new RegExp('^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$');
+
+
+export const UpdateProfileBody = zod.object({
+  "name": zod.string().min(updateProfileBodyNameMin).max(updateProfileBodyNameMax).optional(),
+  "email": zod.string().min(updateProfileBodyEmailMin).max(updateProfileBodyEmailMax).regex(updateProfileBodyEmailRegExp).optional()
+}).describe('Only the fields present are changed.')
+
+export const UpdateProfileResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "role": zod.enum(['member', 'admin']),
+  "suspended": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "lastLoginAt": zod.coerce.date().optional()
+}).describe('Never carries the password hash or the session token.')
+
+
+/**
+ * Every other session is revoked, so a password changed because it leaked actually locks the other party out.
+ * @summary Change your own password
+ */
+export const changePasswordBodyCurrentPasswordMax = 200;
+
+export const changePasswordBodyNewPasswordMin = 8;
+export const changePasswordBodyNewPasswordMax = 200;
+
+
+
+export const ChangePasswordBody = zod.object({
+  "currentPassword": zod.string().min(1).max(changePasswordBodyCurrentPasswordMax),
+  "newPassword": zod.string().min(changePasswordBodyNewPasswordMin).max(changePasswordBodyNewPasswordMax)
+})
+
+export const ChangePasswordResponse = zod.void()
+
+
+/**
+ * Backs "My tickets" for a signed-in member. Matches on the account's phone number, so bookings made before signing up still appear.
+ * @summary Your own bookings and tickets
+ */
+export const ListMyOrdersQueryParams = zod.object({
+  "kind": zod.enum(['table', 'ticket']).optional()
+})
+
+export const ListMyOrdersResponseItem = zod.object({
+  "code": zod.string(),
+  "kind": zod.enum(['table', 'ticket']),
+  "status": zod.enum(['pending', 'paid', 'cancelled', 'expired']),
+  "bookerName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string().optional(),
+  "occasion": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "date": zod.string(),
+  "slot": zod.string(),
+  "holdUntil": zod.string(),
+  "guests": zod.number().optional(),
+  "tableId": zod.string().optional(),
+  "zoneId": zod.string().optional(),
+  "zoneName": zod.string().optional(),
+  "eventId": zod.string().optional(),
+  "eventTitle": zod.string().optional(),
+  "quantity": zod.number().optional(),
+  "amount": zod.number().describe('What the guest pays, VAT included, in THB.'),
+  "amountBase": zod.number().describe('VAT-exclusive portion of `amount`.'),
+  "amountVat": zod.number(),
+  "holdExpiresAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date(),
+  "paidAt": zod.coerce.date().optional(),
+  "cancelledAt": zod.coerce.date().optional()
+}).describe('One shape for both kinds. `guests`\/`tableId`\/`zoneId`\/`zoneName` are present only for table bookings; `eventId`\/`eventTitle`\/`quantity` only for ticket orders.\n')
+export const ListMyOrdersResponse = zod.array(ListMyOrdersResponseItem)
 
 

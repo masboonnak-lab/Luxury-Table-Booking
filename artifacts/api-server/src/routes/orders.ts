@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import {
   db,
   eventsTable,
@@ -30,7 +30,8 @@ import {
 import { advisoryKey, orderCode } from "../domain/codes";
 import { holdsInventory, pgErrorCode, UNIQUE_VIOLATION } from "../domain/holds";
 import { depositSatang } from "../domain/money";
-import { toOrderView, type OrderContext } from "../domain/order-view";
+import { viewAll, viewOf } from "../domain/order-lookup";
+import { toOrderView } from "../domain/order-view";
 import { isThaiPhone, normalisePhone } from "../domain/phone";
 import {
   addDays,
@@ -46,65 +47,6 @@ import { badRequest, conflict, forbidden, gone, notFound } from "../lib/problem"
 const router: IRouter = Router();
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-/**
- * Zone and event names live on other tables but belong on the ticket the guest
- * sees. Batched so listing N orders stays three queries, not 2N + 1.
- */
-async function contextFor(
-  rows: ReadonlyArray<OrderRow>,
-): Promise<Map<string, OrderContext>> {
-  const out = new Map<string, OrderContext>();
-  if (rows.length === 0) {
-    return out;
-  }
-
-  const isString = (v: string | null): v is string => v !== null;
-  const tableIds = [...new Set(rows.map((r) => r.tableId).filter(isString))];
-  const eventIds = [...new Set(rows.map((r) => r.eventId).filter(isString))];
-
-  const zoneByTable = new Map<string, { id: string; name: string }>();
-  if (tableIds.length > 0) {
-    const found = await db
-      .select({
-        tableId: venueTablesTable.id,
-        zoneId: zonesTable.id,
-        zoneName: zonesTable.name,
-      })
-      .from(venueTablesTable)
-      .innerJoin(zonesTable, eq(venueTablesTable.zoneId, zonesTable.id))
-      .where(inArray(venueTablesTable.id, tableIds));
-    for (const f of found) {
-      zoneByTable.set(f.tableId, { id: f.zoneId, name: f.zoneName });
-    }
-  }
-
-  const titleByEvent = new Map<string, string>();
-  if (eventIds.length > 0) {
-    const found = await db
-      .select({ id: eventsTable.id, title: eventsTable.title })
-      .from(eventsTable)
-      .where(inArray(eventsTable.id, eventIds));
-    for (const f of found) {
-      titleByEvent.set(f.id, f.title);
-    }
-  }
-
-  for (const r of rows) {
-    const zone = r.tableId ? zoneByTable.get(r.tableId) : undefined;
-    out.set(r.id, {
-      zoneId: zone?.id,
-      zoneName: zone?.name,
-      eventTitle: r.eventId ? titleByEvent.get(r.eventId) : undefined,
-    });
-  }
-  return out;
-}
-
-async function viewOf(row: OrderRow): Promise<ReturnType<typeof toOrderView>> {
-  const ctx = await contextFor([row]);
-  return toOrderView(row, ctx.get(row.id) ?? {});
-}
 
 /**
  * Codes are random, so a collision is possible in principle. The nested
@@ -333,14 +275,7 @@ router.get("/orders", async (req, res) => {
     )
     .orderBy(desc(ordersTable.createdAt));
 
-  const ctx = await contextFor(rows);
-  const now = new Date();
-
-  res.json(
-    ListOrdersResponse.parse(
-      rows.map((r) => toOrderView(r, ctx.get(r.id) ?? {}, now)),
-    ),
-  );
+  res.json(ListOrdersResponse.parse(await viewAll(rows)));
 });
 
 router.get("/orders/:code", async (req, res) => {

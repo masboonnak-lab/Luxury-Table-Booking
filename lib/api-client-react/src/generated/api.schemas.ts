@@ -249,6 +249,14 @@ export interface CancelOrderRequest {
   phone: string;
 }
 
+export type UserRole = typeof UserRole[keyof typeof UserRole];
+
+
+export const UserRole = {
+  member: 'member',
+  admin: 'admin',
+} as const;
+
 /**
  * Never carries the password hash or the session token.
  */
@@ -256,8 +264,11 @@ export interface AuthUser {
   id: string;
   name: string;
   phone: string;
-  email?: string;
+  email: string;
+  role: UserRole;
+  suspended: boolean;
   createdAt: string;
+  lastLoginAt?: string;
 }
 
 export interface RegisterRequest {
@@ -271,8 +282,12 @@ export interface RegisterRequest {
      * @maxLength 20
      */
   phone: string;
-  /** @maxLength 254 */
-  email?: string;
+  /**
+     * @minLength 5
+     * @maxLength 254
+     * @pattern ^[^\s@]+@[^\s@]+\.[^\s@]{2,}$
+     */
+  email: string;
   /**
      * @minLength 8
      * @maxLength 200
@@ -280,6 +295,36 @@ export interface RegisterRequest {
   password: string;
   /** Must be true. The server records when it was given. */
   pdpaConsent: boolean;
+}
+
+/**
+ * Only the fields present are changed.
+ */
+export interface UpdateProfileRequest {
+  /**
+     * @minLength 2
+     * @maxLength 120
+     */
+  name?: string;
+  /**
+     * @minLength 5
+     * @maxLength 254
+     * @pattern ^[^\s@]+@[^\s@]+\.[^\s@]{2,}$
+     */
+  email?: string;
+}
+
+export interface ChangePasswordRequest {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  currentPassword: string;
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  newPassword: string;
 }
 
 export interface LoginRequest {
@@ -340,6 +385,10 @@ export type ListOrdersParams = {
  * @maxLength 20
  */
 phone: string;
+kind?: OrderKind;
+};
+
+export type ListMyOrdersParams = {
 kind?: OrderKind;
 };
 

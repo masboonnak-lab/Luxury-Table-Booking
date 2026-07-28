@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import {
+  BookOpen,
   Clock,
+  ExternalLink,
   Facebook,
   Instagram,
   Mail,
@@ -16,11 +18,29 @@ import {
 import { AuthDialog } from "./_shared/AuthDialog";
 import { BarTheme, Eyebrow } from "./_shared/BarTheme";
 import { BookingFlow } from "./_shared/BookingFlow";
+import { FloorMap } from "./_shared/FloorMap";
+import { MenuDialog } from "./_shared/MenuDialog";
 import { Photo } from "./_shared/Photo";
+import { SwipeItem, SwipeRow } from "./_shared/SwipeRow";
 import { formatThb } from "./_shared/booking";
-import { ZONES, tablesInZone, zoneCapacity } from "./_shared/floor";
+import { todayIso } from "./_shared/forms";
 import { PHOTOS } from "./_shared/images";
 import { VENUE } from "./_shared/venue";
+
+/** The slot the preview plan is drawn for — the venue's main seating. */
+const PREVIEW_SLOT = "21:00";
+
+/** A search link rather than an embed: no third-party script, no consent banner. */
+const MAP_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+  `${VENUE.name} ${VENUE.address}`,
+)}`;
+
+const ATMOSPHERE = [
+  PHOTOS.interiorTall,
+  PHOTOS.interiorWide,
+  PHOTOS.bartender,
+  PHOTOS.whiskyPour,
+];
 
 const SIGNATURES = [
   {
@@ -66,6 +86,7 @@ const LINEUP = [
 export default function LandingPage() {
   const bookingRef = useRef<HTMLElement>(null);
   const [authOpen, setAuthOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // scrollIntoView rather than an #anchor: `scroll-behavior` would have to live
   // on <html>, which a preview-mounted component does not own.
@@ -105,6 +126,7 @@ export default function LandingPage() {
       </nav>
 
       <AuthDialog open={authOpen} onClose={() => setAuthOpen(false)} />
+      <MenuDialog open={menuOpen} onClose={() => setMenuOpen(false)} />
 
       {/* Hero */}
       <header className="relative isolate overflow-hidden border-b border-border">
@@ -165,162 +187,133 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {SIGNATURES.map((drink) => (
-              <li
-                key={drink.name}
-                className="group overflow-hidden rounded-lg border border-border bg-card"
-              >
-                <Photo
-                  photo={drink.photo}
-                  className="aspect-[4/5]"
-                  imgClassName="transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="p-4">
-                  <h3 className="font-['Playfair_Display',serif] text-lg leading-snug">
-                    {drink.name}
-                  </h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {drink.base}
-                  </p>
-                  <p className="mt-3 text-sm tabular-nums text-primary">
-                    ฿{formatThb(drink.price)}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-10">
+            <SwipeRow label="ค็อกเทลซิกเนเจอร์">
+              {SIGNATURES.map((drink) => (
+                <SwipeItem key={drink.name}>
+                  <div className="group h-full overflow-hidden rounded-lg border border-border bg-card">
+                    <Photo
+                      photo={drink.photo}
+                      className="aspect-[4/5]"
+                      imgClassName="transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="p-4">
+                      <h3 className="font-['Playfair_Display',serif] text-lg leading-snug">
+                        {drink.name}
+                      </h3>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {drink.base}
+                      </p>
+                      <p className="mt-3 text-sm tabular-nums text-primary">
+                        ฿{formatThb(drink.price)}
+                      </p>
+                    </div>
+                  </div>
+                </SwipeItem>
+              ))}
+            </SwipeRow>
+          </div>
+
+          <div className="mt-8 text-center">
+            <button
+              type="button"
+              onClick={() => setMenuOpen(true)}
+              className="inline-flex items-center gap-2 rounded-md border border-border px-6 py-3 text-sm transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+            >
+              <BookOpen className="size-4 text-primary" />
+              ดูเมนูอื่น ๆ ในร้าน
+            </button>
+          </div>
         </div>
       </section>
 
       {/* Atmosphere — photographs only, the room speaks for itself */}
       <section className="border-b border-border bg-[hsl(30_9%_8%)]">
-        <div className="mx-auto max-w-5xl px-6 py-20">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Photo
-              photo={PHOTOS.interiorTall}
-              className="aspect-[4/5] rounded-lg sm:row-span-2 sm:aspect-auto"
-            />
-            <Photo
-              photo={PHOTOS.interiorWide}
-              className="aspect-[4/3] rounded-lg"
-            />
-            <Photo
-              photo={PHOTOS.bartender}
-              className="aspect-[4/3] rounded-lg"
-            />
+        <div className="mx-auto max-w-5xl px-6 py-16">
+          <div className="mb-8 flex justify-center">
+            <a
+              href={MAP_URL}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex items-center gap-2 rounded-md border border-border px-6 py-3 text-sm transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+            >
+              <MapPin className="size-4 text-primary" />
+              เปิดแผนที่ร้านใน Google Maps
+              <ExternalLink className="size-3.5 opacity-60" />
+            </a>
           </div>
+
+          <SwipeRow label="บรรยากาศภายในร้าน">
+            {ATMOSPHERE.map((photo) => (
+              <SwipeItem
+                key={photo.src}
+                className="w-[82%] sm:w-[58%] lg:w-[42%]"
+              >
+                <Photo photo={photo} className="aspect-[4/3] rounded-lg" />
+              </SwipeItem>
+            ))}
+          </SwipeRow>
         </div>
       </section>
 
-      {/* Zones */}
+      {/* Floor plan — the room itself, rather than a description of it */}
       <section className="border-b border-border">
-        <div className="mx-auto max-w-5xl px-6 py-20">
+        <div className="mx-auto max-w-4xl px-6 py-20">
           <div className="text-center">
-            <Eyebrow>โซนที่นั่ง</Eyebrow>
+            <Eyebrow>ผังร้าน</Eyebrow>
             <h2 className="mt-4 font-['Playfair_Display',serif] text-3xl font-medium">
-              เลือกบรรยากาศที่ใช่
+              รู้ว่าจะได้นั่งตรงไหน ก่อนจอง
             </h2>
             <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
-              ตอนจองจะมีแผนผังร้านให้เลือกโต๊ะได้เองว่าอยากนั่งตรงไหน
-              ตั้งแต่ติดเวทีไปจนถึงห้องส่วนตัว
+              ตอนจองจะเลือกโต๊ะเองได้จากผังนี้ ตั้งแต่ติดเวทีไปจนถึงห้องส่วนตัว
             </p>
           </div>
 
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {ZONES.map((zone) => {
-              const cap = zoneCapacity(zone.id);
-              const count = tablesInZone(zone.id).length;
+          <div className="mt-10">
+            <FloorMap
+              readOnly
+              dateKey={todayIso()}
+              slot={PREVIEW_SLOT}
+              guests={2}
+              selectedTableId={null}
+              onSelect={() => undefined}
+            />
+          </div>
 
-              return (
-                <article
-                  key={zone.id}
-                  className="rounded-lg border border-border bg-card p-5"
-                >
-                  <div className="flex items-baseline justify-between gap-3">
-                    <h3 className="font-medium">{zone.name}</h3>
-                    <span className="shrink-0 text-[11px] text-primary">
-                      {count} โต๊ะ
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    {zone.desc}
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
-                    <span>
-                      {cap.min}–{cap.max} ท่าน
-                    </span>
-                    <span>
-                      {zone.minSpend > 0
-                        ? `ขั้นต่ำ ฿${formatThb(zone.minSpend)}`
-                        : "ไม่มีขั้นต่ำ"}
-                    </span>
-                  </div>
-                </article>
-              );
-            })}
+          <div className="mt-8 text-center">
+            <button
+              type="button"
+              onClick={scrollToBooking}
+              className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+            >
+              เลือกโต๊ะและจอง
+            </button>
           </div>
         </div>
       </section>
 
-      {/* Lineup + info */}
+      {/* Lineup */}
       <section className="border-b border-border">
-        <div className="mx-auto grid max-w-5xl gap-12 px-6 py-20 md:grid-cols-2">
-          <div>
+        <div className="mx-auto max-w-3xl px-6 py-20">
+          <div className="text-center">
             <Eyebrow>ดนตรีประจำสัปดาห์</Eyebrow>
-            <ul className="mt-5 space-y-3">
-              {LINEUP.map((row) => (
-                <li
-                  key={row.day}
-                  className="flex items-start gap-3 border-b border-border pb-3 text-sm"
-                >
-                  <Music className="mt-0.5 size-4 shrink-0 text-primary" />
-                  <div>
-                    <p>{row.act}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {row.day}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
           </div>
-
-          <div>
-            <Eyebrow>ช่องทางติดต่อ</Eyebrow>
-            <ul className="mt-5 space-y-2.5">
-              {VENUE.online.map((channel) => {
-                const Icon = CHANNEL_ICON[channel.id];
-                // tel: and mailto: stay in the app; profiles open in a new tab.
-                const external = channel.href.startsWith("http");
-
-                return (
-                  <li key={channel.id}>
-                    <a
-                      href={channel.href}
-                      {...(external
-                        ? { target: "_blank", rel: "noreferrer noopener" }
-                        : {})}
-                      className="flex items-center gap-3 border-b border-border pb-2.5 text-sm transition-colors hover:text-primary focus-visible:outline-none focus-visible:text-primary"
-                    >
-                      <Icon className="size-4 shrink-0 text-primary" />
-                      <span className="text-muted-foreground">
-                        {channel.label}
-                      </span>
-                      <span className="ml-auto text-right">
-                        {channel.handle}
-                      </span>
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-
-            <p className="mt-6 flex gap-3 text-sm text-muted-foreground">
-              <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
-              <span className="leading-relaxed">{VENUE.address}</span>
-            </p>
-          </div>
+          <ul className="mx-auto mt-8 max-w-md space-y-3">
+            {LINEUP.map((row) => (
+              <li
+                key={row.day}
+                className="flex items-start gap-3 border-b border-border pb-3 text-sm"
+              >
+                <Music className="mt-0.5 size-4 shrink-0 text-primary" />
+                <div>
+                  <p>{row.act}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {row.day}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -335,6 +328,57 @@ export default function LandingPage() {
           </div>
 
           <BookingFlow />
+        </div>
+      </section>
+
+      {/* Contact — last, so it is where a visitor looks after deciding */}
+      <section className="border-t border-border">
+        <div className="mx-auto max-w-3xl px-6 py-20">
+          <div className="text-center">
+            <Eyebrow>ช่องทางติดต่อ</Eyebrow>
+            <h2 className="mt-4 font-['Playfair_Display',serif] text-3xl font-medium">
+              คุยกับเราได้ทุกช่องทาง
+            </h2>
+          </div>
+
+          <ul className="mx-auto mt-9 max-w-md space-y-2.5">
+            {VENUE.online.map((channel) => {
+              const Icon = CHANNEL_ICON[channel.id];
+              // tel: and mailto: stay in the app; profiles open in a new tab.
+              const external = channel.href.startsWith("http");
+
+              return (
+                <li key={channel.id}>
+                  <a
+                    href={channel.href}
+                    {...(external
+                      ? { target: "_blank", rel: "noreferrer noopener" }
+                      : {})}
+                    className="flex items-center gap-3 rounded-lg border border-border px-4 py-3.5 text-sm transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:border-primary"
+                  >
+                    <Icon className="size-4 shrink-0 text-primary" />
+                    <span className="text-muted-foreground">
+                      {channel.label}
+                    </span>
+                    <span className="ml-auto truncate text-right">
+                      {channel.handle}
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+
+          <a
+            href={MAP_URL}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="mx-auto mt-4 flex max-w-md items-start gap-3 rounded-lg border border-border px-4 py-3.5 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+          >
+            <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
+            <span className="leading-relaxed">{VENUE.address}</span>
+            <ExternalLink className="mt-0.5 size-3.5 shrink-0 opacity-60" />
+          </a>
         </div>
       </section>
 

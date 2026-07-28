@@ -47,6 +47,13 @@ export const ordersTable = pgTable(
     kind: orderKindEnum("kind").notNull(),
     status: orderStatusEnum("status").notNull().default("pending"),
 
+    /**
+     * Set when a signed-in member books. Guest bookings leave it null, so the
+     * order is still found by phone — and a member who deletes their account
+     * under PDPA does not take the venue's booking history with them.
+     */
+    userId: uuid("user_id"),
+
     bookerName: text("booker_name").notNull(),
     /** Digits only, so 081-234-5678 and 0812345678 are the same guest. */
     phone: text("phone").notNull(),

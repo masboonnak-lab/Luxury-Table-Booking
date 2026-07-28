@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { UserRole } from './userRole';
 
 /**
  * Never carries the password hash or the session token.
@@ -13,6 +14,9 @@ export interface AuthUser {
   id: string;
   name: string;
   phone: string;
-  email?: string;
+  email: string;
+  role: UserRole;
+  suspended: boolean;
   createdAt: Date;
+  lastLoginAt?: Date;
 }

@@ -17,8 +17,12 @@ export interface RegisterRequest {
      * @maxLength 20
      */
   phone: string;
-  /** @maxLength 254 */
-  email?: string;
+  /**
+     * @minLength 5
+     * @maxLength 254
+     * @pattern ^[^\s@]+@[^\s@]+\.[^\s@]{2,}$
+     */
+  email: string;
   /**
      * @minLength 8
      * @maxLength 200
