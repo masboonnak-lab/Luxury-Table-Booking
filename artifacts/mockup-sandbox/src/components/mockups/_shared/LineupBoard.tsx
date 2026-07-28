@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 
 import { formatThb } from "./booking";
 import { todayIso } from "./forms";
+import { PHOTOS } from "./images";
 import { GENRE_ART, GENRE_LABEL, upcomingActs, type Act } from "./lineup";
 import { Photo } from "./Photo";
 import { SwipeItem, SwipeRow } from "./SwipeRow";
@@ -39,42 +40,70 @@ function parts(dateKey: string) {
 }
 
 /**
- * Artwork for an act that has not supplied a press shot. A generated poster is
- * honest about being artwork; a stock photograph of an unrelated musician
- * would read as a picture of who is playing.
+ * A photograph under a heavy genre-tinted wash, with the act's initials over
+ * it. The wash is what keeps this reading as a poster: the placeholder images
+ * are the venue's own interior shots, and shown plainly they would look like
+ * pictures of the performer. A real press shot (`act.photo`) gets a lighter
+ * wash, because then the picture *is* the point.
  */
-function Poster({ act }: { act: Act }) {
+function Poster({ act, className }: { act: Act; className?: string }) {
   const art = GENRE_ART[act.genre];
   const initials = act.name.replace(/[^A-Za-zก-๙]/g, "").slice(0, 2);
+  const pressShot = Boolean(act.photo);
+  const photo = act.photo
+    ? { src: act.photo, alt: act.name }
+    : PHOTOS[act.art];
 
   return (
-    <div
-      className="relative flex size-full items-center justify-center overflow-hidden"
-      style={{
-        background: `radial-gradient(120% 90% at 25% 15%, hsl(${art.from}), hsl(${art.to}) 70%)`,
-      }}
-      aria-hidden
-    >
-      {/* Concentric rings — a record, at poster scale */}
-      <svg viewBox="0 0 100 100" className="absolute inset-0 size-full opacity-25">
-        {[16, 26, 36, 46].map((r) => (
-          <circle
-            key={r}
-            cx={50}
-            cy={50}
-            r={r}
-            fill="none"
-            stroke={`hsl(${art.accent})`}
-            strokeWidth={0.6}
-          />
-        ))}
-      </svg>
-      <span
-        className="relative font-['Playfair_Display',serif] text-5xl"
-        style={{ color: `hsl(${art.accent})` }}
-      >
-        {initials}
-      </span>
+    <div className={cn("relative size-full overflow-hidden", className)}>
+      <Photo
+        photo={photo}
+        className="absolute inset-0 size-full"
+        imgClassName={cn(
+          "transition-transform duration-500 group-hover:scale-105",
+          pressShot ? "opacity-90" : "opacity-45",
+        )}
+      />
+
+      <div
+        aria-hidden
+        className="absolute inset-0"
+        style={{
+          background: pressShot
+            ? `linear-gradient(180deg, transparent 30%, hsl(${art.to} / 0.85))`
+            : `radial-gradient(120% 90% at 25% 15%, hsl(${art.from} / 0.82), hsl(${art.to} / 0.94) 72%)`,
+        }}
+      />
+
+      {pressShot ? null : (
+        <>
+          {/* Concentric rings — a record, at poster scale */}
+          <svg
+            viewBox="0 0 100 100"
+            aria-hidden
+            className="absolute inset-0 size-full opacity-30"
+          >
+            {[16, 26, 36, 46].map((r) => (
+              <circle
+                key={r}
+                cx={50}
+                cy={50}
+                r={r}
+                fill="none"
+                stroke={`hsl(${art.accent})`}
+                strokeWidth={0.6}
+              />
+            ))}
+          </svg>
+          <span
+            aria-hidden
+            className="absolute inset-0 flex items-center justify-center font-['Playfair_Display',serif] text-5xl drop-shadow"
+            style={{ color: `hsl(${art.accent})` }}
+          >
+            {initials}
+          </span>
+        </>
+      )}
     </div>
   );
 }
@@ -121,11 +150,7 @@ function ActDialog({ act, onClose }: { act: Act; onClose: () => void }) {
     >
       <div className="max-h-[88vh] w-full max-w-md overflow-y-auto rounded-t-2xl border border-border bg-card sm:rounded-2xl">
         <div className="relative aspect-[16/10]">
-          {act.photo ? (
-            <Photo photo={{ src: act.photo, alt: act.name }} className="size-full" />
-          ) : (
-            <Poster act={act} />
-          )}
+          <Poster act={act} />
           <button
             type="button"
             onClick={onClose}
@@ -201,15 +226,7 @@ export function LineupBoard() {
                 className="group h-full w-full overflow-hidden rounded-lg border border-border bg-card text-left transition-colors hover:border-primary focus-visible:outline-none focus-visible:border-primary"
               >
                 <div className="relative aspect-[4/3]">
-                  {act.photo ? (
-                    <Photo
-                      photo={{ src: act.photo, alt: act.name }}
-                      className="size-full"
-                      imgClassName="transition-transform duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <Poster act={act} />
-                  )}
+                  <Poster act={act} />
 
                   <div className="absolute left-3 top-3">
                     <DateBlock act={act} />

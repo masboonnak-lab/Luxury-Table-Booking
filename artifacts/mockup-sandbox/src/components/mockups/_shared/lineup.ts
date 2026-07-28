@@ -6,13 +6,18 @@
  * real people that nobody has agreed to. Replace this array with the venue's
  * actual bookings before it goes live.
  *
- * ARTWORK: `photo` is deliberately optional and empty. A gig board runs on the
- * artist's own press shot, which the venue receives with the booking — stock
- * photographs of unrelated musicians would misrepresent who is on stage. Until
- * a real image is supplied, each act is drawn as a poster from its genre.
+ * ARTWORK: `art` points at one of the venue's own photographs, used as rough
+ * placeholder artwork and always shown under a heavy genre-tinted wash so it
+ * reads as a poster rather than as a picture of the performer. A gig board
+ * runs on the artist's own press shot; set `photo` to that URL when the
+ * booking supplies one and it replaces the placeholder.
  */
 
+import { PHOTOS } from "./images";
+
 export type Genre = "band" | "dj" | "solo" | "jazz" | "special";
+
+export type ArtKey = keyof typeof PHOTOS;
 
 export interface Act {
   id: string;
@@ -28,7 +33,9 @@ export interface Act {
   cover: number;
   /** Long-form description shown when the act is opened. */
   about: string;
-  /** Press shot supplied by the artist. Empty until one exists. */
+  /** Placeholder artwork, from the venue's own photographs. */
+  art: ArtKey;
+  /** Press shot supplied by the artist. Overrides `art` when present. */
   photo?: string;
   soldOut?: boolean;
 }
@@ -53,6 +60,7 @@ export const GENRE_ART: Record<Genre, { from: string; to: string; accent: string
 export const LINEUP: ReadonlyArray<Act> = [
   {
     id: "act-neon-soul",
+    art: "bartender",
     name: "NEON SOUL",
     detail: "ฟูลแบนด์ 7 ชิ้น · โซล/ฟังก์",
     genre: "band",
@@ -65,6 +73,7 @@ export const LINEUP: ReadonlyArray<Act> = [
   },
   {
     id: "act-midnight-tokyo",
+    art: "interiorTall",
     name: "MIDNIGHT IN TOKYO",
     detail: "ดีเจรับเชิญ · ดีพเฮาส์",
     genre: "dj",
@@ -78,6 +87,7 @@ export const LINEUP: ReadonlyArray<Act> = [
   },
   {
     id: "act-lamphu",
+    art: "smokedCocktail",
     name: "ลำพูควอเต็ต",
     detail: "แจ๊สสี่ชิ้น · เปียโน กลอง เบส แซกโซโฟน",
     genre: "jazz",
@@ -90,6 +100,7 @@ export const LINEUP: ReadonlyArray<Act> = [
   },
   {
     id: "act-praewa",
+    art: "herbHighball",
     name: "แพรวา",
     detail: "ศิลปินเดี่ยว · อะคูสติก",
     genre: "solo",
@@ -102,6 +113,7 @@ export const LINEUP: ReadonlyArray<Act> = [
   },
   {
     id: "act-rooftop-fest",
+    art: "interiorWide",
     name: "ROOFTOP FESTIVAL",
     detail: "8 ศิลปิน 2 เวที",
     genre: "special",
@@ -114,6 +126,7 @@ export const LINEUP: ReadonlyArray<Act> = [
   },
   {
     id: "act-sarnsri",
+    art: "whiskyPour",
     name: "สารศรี",
     detail: "วงสามชิ้น · อินดี้โฟล์ก",
     genre: "band",
@@ -126,6 +139,7 @@ export const LINEUP: ReadonlyArray<Act> = [
   },
   {
     id: "act-siam-groove",
+    art: "bartender",
     name: "SIAM GROOVE",
     detail: "ดีเจคู่ · ฟังก์ ดิสโก้ ลูกทุ่งรีมิกซ์",
     genre: "dj",
@@ -138,6 +152,7 @@ export const LINEUP: ReadonlyArray<Act> = [
   },
   {
     id: "act-blue-hour",
+    art: "interiorTall",
     name: "BLUE HOUR",
     detail: "ควินเต็ต · โมเดิร์นแจ๊ส",
     genre: "jazz",
@@ -150,6 +165,7 @@ export const LINEUP: ReadonlyArray<Act> = [
   },
   {
     id: "act-anniversary",
+    art: "interiorWide",
     name: "5TH ANNIVERSARY NIGHT",
     detail: "ปาร์ตี้ครบรอบ 5 ปี · เชิญเฉพาะสมาชิก",
     genre: "special",
@@ -162,6 +178,7 @@ export const LINEUP: ReadonlyArray<Act> = [
   },
   {
     id: "act-after-rain",
+    art: "smokedCocktail",
     name: "AFTER RAIN",
     detail: "วงสี่ชิ้น · ซิตี้ป๊อป",
     genre: "band",
