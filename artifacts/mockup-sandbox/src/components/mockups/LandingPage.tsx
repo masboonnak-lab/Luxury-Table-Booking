@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   Clock,
   Facebook,
@@ -9,9 +9,11 @@ import {
   Music,
   Phone,
   ShieldCheck,
+  UserRound,
   type LucideIcon,
 } from "lucide-react";
 
+import { AuthDialog } from "./_shared/AuthDialog";
 import { BarTheme, Eyebrow } from "./_shared/BarTheme";
 import { BookingFlow } from "./_shared/BookingFlow";
 import { Photo } from "./_shared/Photo";
@@ -63,6 +65,7 @@ const LINEUP = [
 
 export default function LandingPage() {
   const bookingRef = useRef<HTMLElement>(null);
+  const [authOpen, setAuthOpen] = useState(false);
 
   // scrollIntoView rather than an #anchor: `scroll-behavior` would have to live
   // on <html>, which a preview-mounted component does not own.
@@ -81,15 +84,27 @@ export default function LandingPage() {
               {VENUE.kind}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={scrollToBooking}
-            className="rounded-md bg-primary px-5 py-2 text-xs font-medium uppercase tracking-[0.15em] text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-          >
-            จองโต๊ะ
-          </button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={() => setAuthOpen(true)}
+              className="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 sm:px-4"
+            >
+              <UserRound className="size-3.5" />
+              <span className="hidden sm:inline">เข้าสู่ระบบ</span>
+            </button>
+            <button
+              type="button"
+              onClick={scrollToBooking}
+              className="rounded-md bg-primary px-4 py-2 text-xs font-medium uppercase tracking-[0.15em] text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 sm:px-5"
+            >
+              จองโต๊ะ
+            </button>
+          </div>
         </div>
       </nav>
+
+      <AuthDialog open={authOpen} onClose={() => setAuthOpen(false)} />
 
       {/* Hero */}
       <header className="relative isolate overflow-hidden border-b border-border">

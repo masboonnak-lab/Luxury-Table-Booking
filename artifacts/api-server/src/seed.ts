@@ -66,38 +66,42 @@ const ZONES: ReadonlyArray<InsertZone> = [
   },
 ];
 
-/** Coordinates match the 100 x 80 space the floor map SVG draws in. */
+/**
+ * Coordinates match the 100 x 92 space the floor map SVG draws in, and must
+ * stay identical to `_shared/floor.ts` in the mockup — the geometry assertions
+ * in `booking.check.ts` guard that file, and this table is what the API serves.
+ */
 const TABLES: ReadonlyArray<InsertVenueTable> = [
-  // Front of stage — four rounds facing the stage block.
-  { id: "S1", zoneId: "stage", shape: "round", x: 14, y: 22, w: 9, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "S2", zoneId: "stage", shape: "round", x: 26, y: 22, w: 9, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "S3", zoneId: "stage", shape: "round", x: 38, y: 22, w: 9, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "S4", zoneId: "stage", shape: "round", x: 50, y: 22, w: 9, h: 9, minSeats: 2, maxSeats: 6 },
+  // Stage front — one row facing the stage, the tables that sell out first.
+  { id: "S1", zoneId: "stage", shape: "rect", x: 52, y: 25, w: 10, h: 9, minSeats: 2, maxSeats: 6 },
+  { id: "S2", zoneId: "stage", shape: "rect", x: 64, y: 25, w: 10, h: 9, minSeats: 2, maxSeats: 6 },
+  { id: "S3", zoneId: "stage", shape: "rect", x: 76, y: 25, w: 10, h: 9, minSeats: 2, maxSeats: 6 },
+  { id: "S4", zoneId: "stage", shape: "rect", x: 88, y: 25, w: 10, h: 9, minSeats: 2, maxSeats: 6 },
+
+  // Main floor — three columns filling the middle of the room.
+  { id: "T1", zoneId: "table", shape: "rect", x: 30, y: 38, w: 12, h: 9, minSeats: 2, maxSeats: 6 },
+  { id: "T2", zoneId: "table", shape: "rect", x: 44, y: 38, w: 12, h: 9, minSeats: 2, maxSeats: 6 },
+  { id: "T3", zoneId: "table", shape: "rect", x: 58, y: 38, w: 12, h: 9, minSeats: 2, maxSeats: 6 },
+  { id: "T4", zoneId: "table", shape: "rect", x: 30, y: 50, w: 12, h: 9, minSeats: 2, maxSeats: 6 },
+  { id: "T5", zoneId: "table", shape: "rect", x: 44, y: 50, w: 12, h: 9, minSeats: 2, maxSeats: 6 },
+  { id: "T6", zoneId: "table", shape: "rect", x: 58, y: 50, w: 12, h: 9, minSeats: 2, maxSeats: 6 },
+  { id: "T7", zoneId: "table", shape: "rect", x: 30, y: 62, w: 12, h: 9, minSeats: 2, maxSeats: 6 },
+  { id: "T8", zoneId: "table", shape: "rect", x: 44, y: 62, w: 12, h: 9, minSeats: 2, maxSeats: 6 },
+
+  // Private rooms, down the right-hand wall.
+  { id: "V1", zoneId: "vip", shape: "rect", x: 87, y: 42, w: 14, h: 12, minSeats: 6, maxSeats: 20 },
+  { id: "V2", zoneId: "vip", shape: "rect", x: 87, y: 56, w: 14, h: 12, minSeats: 6, maxSeats: 20 },
 
   // Bar counter seats, running down the left face of the bar.
-  { id: "B1", zoneId: "counter", shape: "rect", x: 71, y: 11, w: 7, h: 6, minSeats: 1, maxSeats: 4 },
-  { id: "B2", zoneId: "counter", shape: "rect", x: 71, y: 19, w: 7, h: 6, minSeats: 1, maxSeats: 4 },
-  { id: "B3", zoneId: "counter", shape: "rect", x: 71, y: 27, w: 7, h: 6, minSeats: 1, maxSeats: 4 },
-  { id: "B4", zoneId: "counter", shape: "rect", x: 71, y: 35, w: 7, h: 6, minSeats: 1, maxSeats: 4 },
+  { id: "B1", zoneId: "counter", shape: "rect", x: 64, y: 64, w: 7, h: 5, minSeats: 1, maxSeats: 4 },
+  { id: "B2", zoneId: "counter", shape: "rect", x: 64, y: 70, w: 7, h: 5, minSeats: 1, maxSeats: 4 },
+  { id: "B3", zoneId: "counter", shape: "rect", x: 64, y: 76, w: 7, h: 5, minSeats: 1, maxSeats: 4 },
+  { id: "B4", zoneId: "counter", shape: "rect", x: 64, y: 82, w: 7, h: 5, minSeats: 1, maxSeats: 4 },
 
-  // Main floor.
-  { id: "T1", zoneId: "table", shape: "round", x: 14, y: 36, w: 9, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "T2", zoneId: "table", shape: "round", x: 26, y: 36, w: 9, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "T3", zoneId: "table", shape: "round", x: 38, y: 36, w: 9, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "T4", zoneId: "table", shape: "round", x: 50, y: 36, w: 9, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "T5", zoneId: "table", shape: "round", x: 14, y: 48, w: 9, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "T6", zoneId: "table", shape: "round", x: 26, y: 48, w: 9, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "T7", zoneId: "table", shape: "round", x: 38, y: 48, w: 9, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "T8", zoneId: "table", shape: "round", x: 50, y: 48, w: 9, h: 9, minSeats: 2, maxSeats: 6 },
-
-  // Sofa lounge along the back wall.
-  { id: "L1", zoneId: "lounge", shape: "rect", x: 17, y: 65, w: 22, h: 14, minSeats: 4, maxSeats: 10 },
-  { id: "L2", zoneId: "lounge", shape: "rect", x: 43, y: 65, w: 22, h: 14, minSeats: 4, maxSeats: 10 },
-  { id: "L3", zoneId: "lounge", shape: "rect", x: 67, y: 65, w: 22, h: 14, minSeats: 4, maxSeats: 10 },
-
-  // Private rooms.
-  { id: "V1", zoneId: "vip", shape: "rect", x: 88, y: 49, w: 17, h: 14, minSeats: 6, maxSeats: 20 },
-  { id: "V2", zoneId: "vip", shape: "rect", x: 88, y: 67, w: 17, h: 14, minSeats: 6, maxSeats: 20 },
+  // Sofa lounge along the bottom wall.
+  { id: "L1", zoneId: "lounge", shape: "rect", x: 20, y: 76, w: 14, h: 11, minSeats: 4, maxSeats: 10 },
+  { id: "L2", zoneId: "lounge", shape: "rect", x: 36, y: 76, w: 14, h: 11, minSeats: 4, maxSeats: 10 },
+  { id: "L3", zoneId: "lounge", shape: "rect", x: 52, y: 76, w: 14, h: 11, minSeats: 4, maxSeats: 10 },
 ];
 
 /**

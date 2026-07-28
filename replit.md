@@ -11,6 +11,8 @@ A table-reservation and event-ticket app for a Bangkok cocktail bar: pick a nigh
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- `pnpm --filter @workspace/db run generate` — regenerate `lib/db/drizzle/*.sql`, a plain SQL file that creates every table from scratch
+- `pnpm --filter @workspace/api-server run check:booking` — the pure booking, pricing and floor-geometry assertions (no DB, no runner)
 - Required env: `DATABASE_URL` — Postgres connection string
 - Optional env: `RECEIPT_PREFIX` (default `TLD`), `VENUE_TIME_ZONE` (default `Asia/Bangkok`), `HOST` (set `::` on Windows so `localhost` resolves)
 
@@ -62,6 +64,8 @@ A table-reservation and event-ticket app for a Bangkok cocktail bar: pick a nigh
 - **Bookable slots are defined in two places** and must match: `_shared/booking.ts` `SLOT_GROUPS` (what the picker shows) and the `Slot` enum in `openapi.yaml` (what the API accepts, mirrored in `domain/venue.ts`). Last seating is 23:00.
 - **On Windows set `HOST=::`** for the Vite sandbox, or `localhost` resolves to IPv6 and the `0.0.0.0` bind refuses the connection.
 - The mockups' `_shared/booking.ts` and the server's `domain/money.ts` implement the same deposit and VAT rules. If one moves, move the other.
+- **The room exists twice**: `_shared/floor.ts` (what the map draws) and `api-server/src/seed.ts` (what the API serves). They must stay identical. `booking.check.ts` asserts the mockup copy is sane — no overlapping tables, nothing through a wall, whole-number coordinates because the DB columns are integers — but nothing yet compares the two files, so changing one means changing both by hand.
+- **Every push to `main` deploys the landing page** via `.github/workflows/deploy-landing.yml`, gated on typecheck and the booking checks. It needs the `CLOUDFLARE_API_TOKEN` repository secret.
 - `lib/db/src/index.ts` throws at import time when `DATABASE_URL` is unset, so anything importing `@workspace/db` needs it — including the seed.
 
 ## Pointers

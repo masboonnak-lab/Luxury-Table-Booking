@@ -24,10 +24,13 @@ import {
   EMPTY_CONTACT,
 } from "../booking";
 import {
+  CANVAS,
   FIXTURES,
   TABLES,
   ZONES,
   getZone,
+  isInsideRoom,
+  isWholeGeometry,
   isTableFree,
   isTableSelectable,
   selectableTables,
@@ -93,13 +96,27 @@ for (const t of TABLES) {
   ids.add(t.id);
   check(`zone exists for ${t.id}`, getZone(t.zoneId) !== undefined, t.zoneId);
   check(`seats sane ${t.id}`, t.minSeats >= 1 && t.minSeats <= t.maxSeats);
+  // The DB stores these as integers; a fractional coordinate would be lost
+  // between the mockup and what the API actually serves.
+  check(`${t.id} geometry is whole numbers`, isWholeGeometry(t));
 
   const b = boxOf(t);
   check(
     `${t.id} inside canvas`,
-    b.x1 >= 0 && b.y1 >= 0 && b.x2 <= 100 && b.y2 <= 80,
+    b.x1 >= 0 && b.y1 >= 0 && b.x2 <= CANVAS.w && b.y2 <= CANVAS.h,
     JSON.stringify(b),
   );
+
+  // Being on the canvas is not enough — the room has a cut corner, so a table
+  // can sit in bounds and still hang through a wall.
+  for (const [cx, cy] of [
+    [b.x1, b.y1],
+    [b.x2, b.y1],
+    [b.x1, b.y2],
+    [b.x2, b.y2],
+  ] as Array<[number, number]>) {
+    check(`${t.id} corner (${cx},${cy}) inside room`, isInsideRoom(cx, cy));
+  }
 }
 
 for (let i = 0; i < TABLES.length; i++) {
@@ -461,6 +478,23 @@ check("pdf rejected", slipFileError({ type: "application/pdf", size: 1000 } as F
 check(
   "oversize rejected",
   slipFileError({ type: "image/png", size: 6 * 1024 * 1024 } as File) !== null,
+);
+
+check(
+  "the stage is inside the room",
+  isInsideRoom(FIXTURES.stage.x, FIXTURES.stage.y) &&
+    isInsideRoom(
+      FIXTURES.stage.x + FIXTURES.stage.w,
+      FIXTURES.stage.y + FIXTURES.stage.h,
+    ),
+);
+check(
+  "the bar is inside the room",
+  isInsideRoom(FIXTURES.bar.x, FIXTURES.bar.y) &&
+    isInsideRoom(
+      FIXTURES.bar.x + FIXTURES.bar.w,
+      FIXTURES.bar.y + FIXTURES.bar.h,
+    ),
 );
 
 console.log(

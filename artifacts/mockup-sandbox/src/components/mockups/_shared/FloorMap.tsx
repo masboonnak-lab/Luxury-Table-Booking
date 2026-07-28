@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Check, DoorOpen, Info } from "lucide-react";
+import { Check, Info } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 import { formatThb } from "./booking";
 import {
+  CANVAS,
   FIXTURES,
+  ROOM_OUTLINE,
   TABLES,
   getZone,
   isTableFree,
@@ -29,41 +31,87 @@ function stateOf(
   return "open";
 }
 
+/**
+ * Solid fills, read at a glance: green is free, red is gone, gold is yours.
+ * Grey is the table that exists but cannot seat this party — visible, so the
+ * room still reads as a room, but obviously not on offer.
+ */
 const FILL: Record<TableState, string> = {
+  open: "hsl(151 40% 30%)",
   selected: "hsl(38 58% 56%)",
-  open: "hsl(30 9% 16%)",
-  wrongSize: "hsl(30 8% 11%)",
-  taken: "hsl(30 8% 10%)",
+  wrongSize: "hsl(30 6% 19%)",
+  taken: "hsl(5 52% 36%)",
 };
 
 const STROKE: Record<TableState, string> = {
-  selected: "hsl(38 58% 66%)",
-  open: "hsl(38 58% 56%)",
-  wrongSize: "hsl(32 9% 22%)",
-  taken: "hsl(6 62% 40%)",
+  open: "hsl(151 44% 46%)",
+  selected: "hsl(38 62% 72%)",
+  wrongSize: "hsl(32 8% 28%)",
+  taken: "hsl(5 58% 50%)",
 };
 
 const TEXT: Record<TableState, string> = {
+  open: "hsl(150 30% 92%)",
   selected: "hsl(30 12% 8%)",
-  open: "hsl(40 26% 88%)",
-  wrongSize: "hsl(36 8% 40%)",
-  taken: "hsl(36 8% 34%)",
+  wrongSize: "hsl(36 8% 46%)",
+  taken: "hsl(6 30% 90%)",
 };
 
 const LEGEND: Array<{ state: TableState; label: string }> = [
-  { state: "open", label: "ว่าง เลือกได้" },
+  { state: "open", label: "ว่าง" },
+  { state: "taken", label: "จองแล้ว" },
   { state: "selected", label: "โต๊ะที่เลือก" },
-  { state: "wrongSize", label: "ที่นั่งไม่พอดีจำนวนคน" },
-  { state: "taken", label: "ถูกจองแล้ว" },
+  { state: "wrongSize", label: "ที่นั่งไม่พอดี" },
 ];
 
-function LegendSwatch({ state }: { state: TableState }) {
+const ROOM_PATH = `M ${ROOM_OUTLINE.map(([x, y]) => `${x} ${y}`).join(" L ")} Z`;
+
+/** Signage, not decoration — a plan without extinguishers is not a floor plan. */
+function Extinguisher({ x, y }: { x: number; y: number }) {
   return (
-    <span
-      aria-hidden
-      className="inline-block size-3 shrink-0 rounded-sm border"
-      style={{ background: FILL[state], borderColor: STROKE[state] }}
-    />
+    <g transform={`translate(${x} ${y})`} aria-hidden>
+      <rect x={-1} y={-1.6} width={2} height={3.6} rx={0.8} fill="hsl(5 62% 48%)" />
+      <rect x={-0.3} y={-2.6} width={1.4} height={1.1} rx={0.4} fill="hsl(5 62% 48%)" />
+    </g>
+  );
+}
+
+function ExitBadge({
+  x,
+  y,
+  label,
+  tone,
+}: {
+  x: number;
+  y: number;
+  label: string;
+  tone: "primary" | "danger";
+}) {
+  const bg = tone === "danger" ? "hsl(5 62% 45%)" : "hsl(38 58% 56%)";
+  const fg = tone === "danger" ? "hsl(0 0% 98%)" : "hsl(30 12% 8%)";
+  const width = label.length * 2.1 + 5;
+
+  return (
+    <g aria-hidden>
+      <rect
+        x={x - width / 2}
+        y={y - 3}
+        width={width}
+        height={6}
+        rx={3}
+        fill={bg}
+      />
+      <text
+        x={x}
+        y={y + 1.3}
+        textAnchor="middle"
+        fontSize={3.4}
+        fill={fg}
+        style={{ letterSpacing: "0.06em" }}
+      >
+        {label}
+      </text>
+    </g>
   );
 }
 
@@ -91,179 +139,178 @@ export function FloorMap({
 
   return (
     <div>
-      <div className="rounded-lg border border-border bg-[hsl(30_9%_7%)] p-3">
-        <svg
-          viewBox="0 0 100 80"
-          className="w-full"
-          role="group"
-          aria-label="แผนผังโต๊ะภายในร้าน"
-        >
-          {/* Room shell */}
-          <rect
-            x={1}
-            y={1}
-            width={98}
-            height={78}
-            rx={2}
-            fill="hsl(30 9% 9%)"
-            stroke="hsl(32 9% 18%)"
-            strokeWidth={0.5}
-          />
+      <div className="overflow-hidden rounded-xl border border-border bg-[hsl(30_9%_7%)]">
+        {/* Status key, above the plan the way a printed one carries it */}
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-border px-4 py-3">
+          <span className="text-[11px] uppercase tracking-[0.22em] text-primary">
+            สถานะโต๊ะ
+          </span>
+          {LEGEND.map((l) => (
+            <span
+              key={l.state}
+              className="flex items-center gap-2 text-xs text-muted-foreground"
+            >
+              <span
+                aria-hidden
+                className="inline-block size-3.5 shrink-0 rounded-[3px] border"
+                style={{ background: FILL[l.state], borderColor: STROKE[l.state] }}
+              />
+              {l.label}
+            </span>
+          ))}
+        </div>
 
-          {/* Stage */}
-          <rect
-            x={FIXTURES.stage.x}
-            y={FIXTURES.stage.y}
-            width={FIXTURES.stage.w}
-            height={FIXTURES.stage.h}
-            rx={1.5}
-            fill="hsl(38 58% 56% / 0.16)"
-            stroke="hsl(38 58% 56% / 0.5)"
-            strokeWidth={0.5}
-          />
-          <text
-            x={FIXTURES.stage.x + FIXTURES.stage.w / 2}
-            y={FIXTURES.stage.y + FIXTURES.stage.h / 2 + 1.4}
-            textAnchor="middle"
-            fontSize={4}
-            fill="hsl(38 58% 66%)"
-            style={{ letterSpacing: "0.2em" }}
+        <div className="p-3">
+          <svg
+            viewBox={`0 0 ${CANVAS.w} ${CANVAS.h}`}
+            className="w-full"
+            role="group"
+            aria-label="แผนผังโต๊ะภายในร้าน"
           >
-            {FIXTURES.stage.label}
-          </text>
+            {/* Room shell — the cut corner is the entrance side */}
+            <path
+              d={ROOM_PATH}
+              fill="hsl(30 9% 10%)"
+              stroke="hsl(38 58% 56% / 0.85)"
+              strokeWidth={0.8}
+              strokeLinejoin="round"
+            />
 
-          {/* Bar */}
-          <rect
-            x={FIXTURES.bar.x}
-            y={FIXTURES.bar.y}
-            width={FIXTURES.bar.w}
-            height={FIXTURES.bar.h}
-            rx={1.5}
-            fill="hsl(30 8% 13%)"
-            stroke="hsl(32 9% 22%)"
-            strokeWidth={0.5}
-          />
-          <text
-            x={FIXTURES.bar.x + FIXTURES.bar.w / 2}
-            y={FIXTURES.bar.y + FIXTURES.bar.h / 2 + 1.4}
-            textAnchor="middle"
-            fontSize={4}
-            fill="hsl(36 11% 55%)"
-            style={{ letterSpacing: "0.2em" }}
-          >
-            {FIXTURES.bar.label}
-          </text>
+            {/* Stage */}
+            <rect
+              x={FIXTURES.stage.x}
+              y={FIXTURES.stage.y}
+              width={FIXTURES.stage.w}
+              height={FIXTURES.stage.h}
+              rx={1.5}
+              fill="hsl(30 8% 14%)"
+              stroke="hsl(38 58% 56% / 0.35)"
+              strokeWidth={0.5}
+            />
+            <text
+              x={FIXTURES.stage.x + FIXTURES.stage.w / 2}
+              y={FIXTURES.stage.y + FIXTURES.stage.h / 2 + 1.6}
+              textAnchor="middle"
+              fontSize={4.4}
+              fill="hsl(40 26% 88%)"
+              style={{ letterSpacing: "0.28em" }}
+            >
+              {FIXTURES.stage.label}
+            </text>
 
-          {/* Entrance */}
-          <text
-            x={FIXTURES.entrance.x}
-            y={FIXTURES.entrance.y}
-            fontSize={3.2}
-            fill="hsl(36 11% 50%)"
-          >
-            ▸ {FIXTURES.entrance.label}
-          </text>
+            {/* Bar */}
+            <rect
+              x={FIXTURES.bar.x}
+              y={FIXTURES.bar.y}
+              width={FIXTURES.bar.w}
+              height={FIXTURES.bar.h}
+              rx={1.5}
+              fill="hsl(30 8% 14%)"
+              stroke="hsl(32 9% 24%)"
+              strokeWidth={0.5}
+            />
+            <text
+              x={FIXTURES.bar.x + FIXTURES.bar.w / 2}
+              y={FIXTURES.bar.y + FIXTURES.bar.h / 2 + 1.6}
+              textAnchor="middle"
+              fontSize={4.4}
+              fill="hsl(40 20% 80%)"
+              style={{ letterSpacing: "0.28em" }}
+            >
+              {FIXTURES.bar.label}
+            </text>
 
-          {/* Tables */}
-          {TABLES.map((t) => {
-            const state = stateOf(t, dateKey, slot, guests, selectedTableId);
-            const interactive = state === "open" || state === "selected";
-            const zone = getZone(t.zoneId);
+            {FIXTURES.extinguishers.map((e) => (
+              <Extinguisher key={`${e.x}-${e.y}`} x={e.x} y={e.y} />
+            ))}
 
-            const title = `${t.id} · ${zone?.name ?? ""} · ${t.minSeats}–${t.maxSeats} ท่าน · ${
-              state === "taken"
-                ? "ถูกจองแล้ว"
-                : state === "wrongSize"
-                  ? "ที่นั่งไม่พอดี"
-                  : "ว่าง"
-            }`;
+            {/* Tables */}
+            {TABLES.map((t) => {
+              const state = stateOf(t, dateKey, slot, guests, selectedTableId);
+              const interactive = state === "open" || state === "selected";
+              const zone = getZone(t.zoneId);
 
-            const common = {
-              fill: FILL[state],
-              stroke: STROKE[state],
-              strokeWidth: state === "selected" ? 1.1 : 0.6,
-              strokeDasharray: state === "taken" ? "1.4 1.2" : undefined,
-            };
+              const title = `${t.id} · ${zone?.name ?? ""} · ${t.minSeats}–${t.maxSeats} ท่าน · ${
+                state === "taken"
+                  ? "ถูกจองแล้ว"
+                  : state === "wrongSize"
+                    ? "ที่นั่งไม่พอดี"
+                    : "ว่าง"
+              }`;
 
-            return (
-              <g
-                key={t.id}
-                role={interactive ? "button" : undefined}
-                tabIndex={interactive ? 0 : undefined}
-                aria-label={title}
-                aria-pressed={state === "selected"}
-                onClick={interactive ? () => onSelect(t.id) : undefined}
-                onKeyDown={
-                  interactive
-                    ? (e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          onSelect(t.id);
+              return (
+                <g
+                  key={t.id}
+                  role={interactive ? "button" : undefined}
+                  tabIndex={interactive ? 0 : undefined}
+                  aria-label={title}
+                  aria-pressed={state === "selected"}
+                  onClick={interactive ? () => onSelect(t.id) : undefined}
+                  onKeyDown={
+                    interactive
+                      ? (e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            onSelect(t.id);
+                          }
                         }
-                      }
-                    : undefined
-                }
-                onMouseEnter={() => setHovered(t.id)}
-                onMouseLeave={() => setHovered((h) => (h === t.id ? null : h))}
-                onFocus={() => setHovered(t.id)}
-                onBlur={() => setHovered((h) => (h === t.id ? null : h))}
-                className={cn(
-                  "outline-none",
-                  interactive ? "cursor-pointer" : "cursor-not-allowed",
-                )}
-                style={{ opacity: state === "taken" ? 0.55 : 1 }}
-              >
-                <title>{title}</title>
+                      : undefined
+                  }
+                  onMouseEnter={() => setHovered(t.id)}
+                  onMouseLeave={() => setHovered((h) => (h === t.id ? null : h))}
+                  onFocus={() => setHovered(t.id)}
+                  onBlur={() => setHovered((h) => (h === t.id ? null : h))}
+                  className={cn(
+                    "outline-none transition-opacity",
+                    interactive ? "cursor-pointer" : "cursor-not-allowed",
+                  )}
+                  style={{ opacity: state === "taken" ? 0.8 : 1 }}
+                >
+                  <title>{title}</title>
 
-                {t.shape === "round" ? (
-                  <circle cx={t.x} cy={t.y} r={t.w / 2} {...common} />
-                ) : (
                   <rect
                     x={t.x - t.w / 2}
                     y={t.y - t.h / 2}
                     width={t.w}
                     height={t.h}
-                    rx={1.2}
-                    {...common}
+                    rx={1.4}
+                    fill={FILL[state]}
+                    stroke={STROKE[state]}
+                    strokeWidth={
+                      state === "selected"
+                        ? 1.2
+                        : hovered === t.id
+                          ? 0.9
+                          : 0.5
+                    }
                   />
-                )}
 
-                <text
-                  x={t.x}
-                  y={t.y + 1.3}
-                  textAnchor="middle"
-                  fontSize={3.6}
-                  fill={TEXT[state]}
-                  style={{ pointerEvents: "none" }}
-                >
-                  {t.id}
-                </text>
+                  <text
+                    x={t.x}
+                    y={t.y + 1.4}
+                    textAnchor="middle"
+                    fontSize={3.8}
+                    fill={TEXT[state]}
+                    style={{ pointerEvents: "none", letterSpacing: "0.04em" }}
+                  >
+                    {t.id}
+                  </text>
+                </g>
+              );
+            })}
 
-                {state === "selected" ? (
-                  <circle
-                    cx={t.x}
-                    cy={t.y}
-                    r={t.w / 2 + 1.8}
-                    fill="none"
-                    stroke="hsl(38 58% 56% / 0.55)"
-                    strokeWidth={0.5}
-                  />
-                ) : null}
-              </g>
-            );
-          })}
-        </svg>
+            {FIXTURES.exits.map((e) => (
+              <ExitBadge
+                key={e.id}
+                x={e.x}
+                y={e.y}
+                label={e.label}
+                tone={e.tone}
+              />
+            ))}
+          </svg>
+        </div>
       </div>
-
-      {/* Legend */}
-      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground">
-        {LEGEND.map((l) => (
-          <li key={l.state} className="flex items-center gap-1.5">
-            <LegendSwatch state={l.state} />
-            {l.label}
-          </li>
-        ))}
-      </ul>
 
       {/* Focused table detail */}
       <div className="mt-3 min-h-[4.5rem] rounded-lg border border-border bg-card p-3.5">
@@ -301,11 +348,6 @@ export function FloorMap({
           </p>
         )}
       </div>
-
-      <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-        <DoorOpen className="size-3 shrink-0" />
-        เวทีอยู่ด้านบนของผัง บาร์อยู่ขวามือ ห้อง VIP อยู่มุมขวาล่าง
-      </p>
     </div>
   );
 }
