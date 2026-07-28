@@ -26,10 +26,12 @@ export function sessionExpiry(now: Date = new Date()): Date {
 export function cookieOptions(expiresAt: Date): CookieOptions {
   return {
     httpOnly: true,
-    // The API and the site are served from different hosts in this setup, so
-    // the cookie has to survive a cross-site request — which browsers only
-    // allow with SameSite=None, and only over HTTPS.
-    sameSite: process.env["NODE_ENV"] === "production" ? "none" : "lax",
+    // Lax, not None: the site reaches the API through a same-origin /api path,
+    // so the cookie is never sent cross-site and does not need the weaker
+    // setting. If the API is ever called from another origin, that call needs
+    // SameSite=None and HTTPS on both ends — change it deliberately, not by
+    // discovering sign-in silently fails in one browser.
+    sameSite: "lax",
     secure: process.env["NODE_ENV"] === "production",
     path: "/",
     expires: expiresAt,

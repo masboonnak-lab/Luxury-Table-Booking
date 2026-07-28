@@ -21,6 +21,9 @@ const ENTRY = "LandingPage";
 process.env.BASE_PATH = BASE_PATH;
 process.env.OUT_DIR = `dist${BASE_PATH}`.replace(/\/$/, "");
 process.env.VITE_MOCKUP_ENTRY = ENTRY;
+// API calls go to <base>/api, which the Worker proxies to the API service.
+// Same-origin, so the session cookie is ordinary same-site.
+process.env.VITE_API_URL = BASE_PATH.replace(/\/$/, "");
 // vite.config validates PORT even for a build; it is unused here.
 process.env.PORT ??= "5173";
 process.env.NODE_ENV = "production";

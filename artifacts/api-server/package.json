@@ -10,7 +10,9 @@
     "seed": "pnpm run build && node --env-file-if-exists=../../.env --enable-source-maps ./dist/seed.mjs",
     "check:booking": "esbuild ../mockup-sandbox/src/components/mockups/_shared/__checks__/booking.check.ts --bundle --platform=node --format=esm --outfile=./dist/booking.check.mjs --log-level=warning && node ./dist/booking.check.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "check:flow": "node --env-file-if-exists=../../.env ./flow-check.mjs"
+    "check:flow": "node --env-file-if-exists=../../.env ./flow-check.mjs",
+    "snapshot:export": "pnpm run build && node --env-file-if-exists=../../.env ./dist/snapshot.mjs export ../../backups",
+    "snapshot:import": "node --env-file-if-exists=../../.env ./dist/snapshot.mjs import"
   },
   "dependencies": {
     "@workspace/api-zod": "workspace:*",

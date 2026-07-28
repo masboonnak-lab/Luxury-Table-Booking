@@ -1,0 +1,39 @@
+# Cloudflare Tunnel: makes the API on this machine reachable at
+# api.sovereign-os.online without opening a port on the router.
+#
+# Nothing listens on the public internet here — cloudflared dials *out* to
+# Cloudflare and traffic comes back down that connection. There is no port to
+# forward, no static IP to buy, and Postgres stays bound to localhost where it
+# cannot be reached from outside at all.
+#
+# One-time setup (needs a browser, so run these yourself):
+#
+#   cloudflared tunnel login
+#   cloudflared tunnel create club-api
+#   cloudflared tunnel route dns club-api api.sovereign-os.online
+#
+# `create` prints a tunnel UUID and writes <UUID>.json into ~/.cloudflared.
+# Put that UUID below, then:
+#
+#   cloudflared tunnel --config cloudflared/config.yml run
+#
+# To keep it running after a reboot, install it as a Windows service:
+#
+#   cloudflared service install
+#
+# Caveat worth being clear about: this machine is now the server. When it is
+# off, asleep, or off the network, the booking system is down — the landing
+# page still loads, because that is static on Cloudflare's edge, but signing
+# in and booking stop working.
+
+tunnel: PUT-YOUR-TUNNEL-UUID-HERE
+credentials-file: C:\Users\n6351\.cloudflared\PUT-YOUR-TUNNEL-UUID-HERE.json
+
+ingress:
+  # The API. 5100 because something else on this machine already holds 5000.
+  - hostname: api.sovereign-os.online
+    service: http://127.0.0.1:5100
+
+  # Required last rule: anything else gets a flat refusal rather than being
+  # forwarded somewhere unintended.
+  - service: http_status:404

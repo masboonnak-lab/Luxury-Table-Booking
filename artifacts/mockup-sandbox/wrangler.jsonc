@@ -1,5 +1,7 @@
 {
-  // Assets-only Worker: no server code, it just serves the built files.
+  // Serves the built landing page, and forwards /entertainment/club/api/* to
+  // the API on Render — see worker.js for why the proxy exists rather than the
+  // page calling the API's own hostname.
   //
   // The route claims ONLY /entertainment/club*, so every other path on
   // sovereign-os.online keeps going to the existing origin untouched.
@@ -9,16 +11,23 @@
   // dist/entertainment/club/assets/x.js:
   //
   //   pnpm --filter @workspace/mockup-sandbox run build:club
-  //   pnpm dlx wrangler deploy --config artifacts/mockup-sandbox/wrangler.jsonc
+  //   pnpm dlx wrangler@4 deploy --config artifacts/mockup-sandbox/wrangler.jsonc
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "club-landing",
+  "main": "./worker.js",
   "compatibility_date": "2026-07-01",
   "assets": {
     "directory": "./dist",
+    "binding": "ASSETS",
     // The landing page has no client-side routing, so an unknown path should
     // 404 rather than silently render the landing page under a wrong URL.
     "not_found_handling": "none",
     "html_handling": "auto-trailing-slash"
+  },
+  "vars": {
+    // Set to the Render service URL once it exists, then redeploy. Until then
+    // the Worker answers /api with a clear 503 rather than a broken page.
+    "API_ORIGIN": ""
   },
   "routes": [
     {
