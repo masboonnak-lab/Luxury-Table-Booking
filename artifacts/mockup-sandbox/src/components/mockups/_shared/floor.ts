@@ -62,39 +62,41 @@ export interface TableSpec {
   maxSeats: number;
 }
 
+/**
+ * Whole numbers throughout: `venue_tables` stores these as integers, so a
+ * half-unit here would not survive the round trip through the database.
+ */
 export const TABLES: ReadonlyArray<TableSpec> = [
-  // Stage front — one row facing the stage, the tables that sell out first.
-  { id: "S1", zoneId: "stage", shape: "rect", x: 52, y: 25, w: 10, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "S2", zoneId: "stage", shape: "rect", x: 64, y: 25, w: 10, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "S3", zoneId: "stage", shape: "rect", x: 76, y: 25, w: 10, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "S4", zoneId: "stage", shape: "rect", x: 88, y: 25, w: 10, h: 9, minSeats: 2, maxSeats: 6 },
+  // Counter seats, tucked under the bar at the top left.
+  { id: "B1", zoneId: "counter", shape: "rect", x: 11, y: 27, w: 7, h: 6, minSeats: 1, maxSeats: 4 },
+  { id: "B2", zoneId: "counter", shape: "rect", x: 19, y: 27, w: 7, h: 6, minSeats: 1, maxSeats: 4 },
+  { id: "B3", zoneId: "counter", shape: "rect", x: 27, y: 27, w: 7, h: 6, minSeats: 1, maxSeats: 4 },
+  { id: "B4", zoneId: "counter", shape: "rect", x: 35, y: 27, w: 7, h: 6, minSeats: 1, maxSeats: 4 },
 
-  // Main floor — three columns filling the middle of the room.
-  { id: "T1", zoneId: "table", shape: "rect", x: 30, y: 38, w: 12, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "T2", zoneId: "table", shape: "rect", x: 44, y: 38, w: 12, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "T3", zoneId: "table", shape: "rect", x: 58, y: 38, w: 12, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "T4", zoneId: "table", shape: "rect", x: 30, y: 50, w: 12, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "T5", zoneId: "table", shape: "rect", x: 44, y: 50, w: 12, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "T6", zoneId: "table", shape: "rect", x: 58, y: 50, w: 12, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "T7", zoneId: "table", shape: "rect", x: 30, y: 62, w: 12, h: 9, minSeats: 2, maxSeats: 6 },
-  { id: "T8", zoneId: "table", shape: "rect", x: 44, y: 62, w: 12, h: 9, minSeats: 2, maxSeats: 6 },
+  // Stage front — the row facing the stage, first to sell out.
+  { id: "S1", zoneId: "stage", shape: "rect", x: 60, y: 27, w: 9, h: 6, minSeats: 2, maxSeats: 6 },
+  { id: "S2", zoneId: "stage", shape: "rect", x: 70, y: 27, w: 9, h: 6, minSeats: 2, maxSeats: 6 },
+  { id: "S3", zoneId: "stage", shape: "rect", x: 80, y: 27, w: 9, h: 6, minSeats: 2, maxSeats: 6 },
+  { id: "S4", zoneId: "stage", shape: "rect", x: 90, y: 27, w: 9, h: 6, minSeats: 2, maxSeats: 6 },
 
-  // Private rooms, down the right-hand wall.
-  { id: "V1", zoneId: "vip", shape: "rect", x: 87, y: 42, w: 14, h: 12, minSeats: 6, maxSeats: 20 },
-  { id: "V2", zoneId: "vip", shape: "rect", x: 87, y: 56, w: 14, h: 12, minSeats: 6, maxSeats: 20 },
+  // Main floor — two rows of four, split by the centre walkway.
+  { id: "T1", zoneId: "table", shape: "rect", x: 14, y: 40, w: 12, h: 10, minSeats: 2, maxSeats: 6 },
+  { id: "T2", zoneId: "table", shape: "rect", x: 28, y: 40, w: 12, h: 10, minSeats: 2, maxSeats: 6 },
+  { id: "T3", zoneId: "table", shape: "rect", x: 42, y: 40, w: 12, h: 10, minSeats: 2, maxSeats: 6 },
+  { id: "T4", zoneId: "table", shape: "rect", x: 56, y: 40, w: 12, h: 10, minSeats: 2, maxSeats: 6 },
+  { id: "T5", zoneId: "table", shape: "rect", x: 14, y: 52, w: 12, h: 10, minSeats: 2, maxSeats: 6 },
+  { id: "T6", zoneId: "table", shape: "rect", x: 28, y: 52, w: 12, h: 10, minSeats: 2, maxSeats: 6 },
+  { id: "T7", zoneId: "table", shape: "rect", x: 42, y: 52, w: 12, h: 10, minSeats: 2, maxSeats: 6 },
+  { id: "T8", zoneId: "table", shape: "rect", x: 56, y: 52, w: 12, h: 10, minSeats: 2, maxSeats: 6 },
 
-  // Bar counter seats, running down the left face of the bar.
-  // Whole numbers throughout: `venue_tables` stores these as integers, so a
-  // half-unit here would not survive the round trip through the database.
-  { id: "B1", zoneId: "counter", shape: "rect", x: 64, y: 64, w: 7, h: 5, minSeats: 1, maxSeats: 4 },
-  { id: "B2", zoneId: "counter", shape: "rect", x: 64, y: 70, w: 7, h: 5, minSeats: 1, maxSeats: 4 },
-  { id: "B3", zoneId: "counter", shape: "rect", x: 64, y: 76, w: 7, h: 5, minSeats: 1, maxSeats: 4 },
-  { id: "B4", zoneId: "counter", shape: "rect", x: 64, y: 82, w: 7, h: 5, minSeats: 1, maxSeats: 4 },
+  // Private rooms, stacked down the right-hand wall.
+  { id: "V1", zoneId: "vip", shape: "rect", x: 82, y: 39, w: 22, h: 11, minSeats: 6, maxSeats: 20 },
+  { id: "V2", zoneId: "vip", shape: "rect", x: 82, y: 51, w: 22, h: 11, minSeats: 6, maxSeats: 20 },
 
-  // Sofa lounge along the bottom wall.
-  { id: "L1", zoneId: "lounge", shape: "rect", x: 20, y: 76, w: 14, h: 11, minSeats: 4, maxSeats: 10 },
-  { id: "L2", zoneId: "lounge", shape: "rect", x: 36, y: 76, w: 14, h: 11, minSeats: 4, maxSeats: 10 },
-  { id: "L3", zoneId: "lounge", shape: "rect", x: 52, y: 76, w: 14, h: 11, minSeats: 4, maxSeats: 10 },
+  // Sofa lounge across the back, behind the main walkway.
+  { id: "L1", zoneId: "lounge", shape: "rect", x: 16, y: 68, w: 20, h: 13, minSeats: 4, maxSeats: 10 },
+  { id: "L2", zoneId: "lounge", shape: "rect", x: 38, y: 68, w: 20, h: 13, minSeats: 4, maxSeats: 10 },
+  { id: "L3", zoneId: "lounge", shape: "rect", x: 60, y: 68, w: 20, h: 13, minSeats: 4, maxSeats: 10 },
 ];
 
 /**
@@ -102,7 +104,7 @@ export const TABLES: ReadonlyArray<TableSpec> = [
  * viewBox and the layout assertions both read it, so the plan cannot silently
  * outgrow the canvas it is drawn on.
  */
-export const CANVAS = { w: 100, h: 92 } as const;
+export const CANVAS = { w: 100, h: 100 } as const;
 
 /**
  * The room's own outline, clockwise from the top of the diagonal wall. Drawn
@@ -110,27 +112,48 @@ export const CANVAS = { w: 100, h: 92 } as const;
  * is what makes the plan recognisable as this room.
  */
 export const ROOM_OUTLINE: ReadonlyArray<readonly [number, number]> = [
-  [32, 4],
-  [96, 4],
-  [96, 86],
-  [8, 86],
-  [8, 40],
+  [5, 5],
+  [95, 5],
+  [95, 82],
+  [5, 82],
 ];
 
-/** Fixed furniture and wayfinding, drawn but never bookable. */
+/**
+ * Fixed furniture and wayfinding, drawn but never bookable.
+ *
+ * Signage lives in the margin *outside* the walls rather than on top of the
+ * room: an extinguisher drawn over the stage sat on its label and made both
+ * unreadable.
+ */
 export const FIXTURES = {
-  stage: { x: 40, y: 6, w: 54, h: 11, label: "เวที" },
-  bar: { x: 68, y: 62, w: 26, h: 22, label: "บาร์" },
-  /** Wayfinding badges, pinned just outside the wall they sit on. */
-  exits: [
-    { id: "entry", x: 16, y: 91, label: "ทางเข้า–ออก", tone: "primary" },
-    { id: "fire", x: 58, y: 91, label: "ทางหนีไฟ", tone: "danger" },
+  /** The bar, the booth and the stage run as one band across the top. */
+  bar: { x: 8, y: 8, w: 26, h: 12, label: "บาร์" },
+  dj: { x: 38, y: 8, w: 18, h: 12, label: "ดีเจ" },
+  stage: { x: 60, y: 8, w: 32, h: 12, label: "เวที" },
+
+  /**
+   * Walkways. Drawn in a muted gold, deliberately not the green of the
+   * reference plan — green already means "available" in the legend, and one
+   * colour cannot carry two meanings on the same drawing.
+   */
+  walkways: [
+    { id: "centre", x: 6, y: 34, w: 88, h: 4 },
+    { id: "back", x: 6, y: 58, w: 88, h: 4 },
+    { id: "vip-run", x: 63, y: 34, w: 6, h: 28 },
   ],
-  /** Fire extinguisher positions, mandated signage on a real plan. */
+
+  /** Wayfinding badges, below the wall they belong to. */
+  exits: [
+    { id: "entry", x: 20, y: 90, label: "ทางเข้า–ออก", tone: "primary" },
+    { id: "exit-mid", x: 55, y: 90, label: "ทางออก", tone: "danger" },
+    { id: "exit-right", x: 82, y: 90, label: "ทางออก", tone: "danger" },
+  ],
+
+  /** Fire extinguishers, in the side margins so they never cover the room. */
   extinguishers: [
-    { x: 44, y: 11 },
-    { x: 13, y: 45 },
-    { x: 81, y: 73 },
+    { x: 2, y: 30 },
+    { x: 2, y: 66 },
+    { x: 98, y: 30 },
   ],
 } as const;
 

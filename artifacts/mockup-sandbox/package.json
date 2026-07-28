@@ -7,6 +7,7 @@
     "dev": "vite dev",
     "build": "vite build",
     "build:club": "node ./build-club.mjs",
+    "deploy:club": "node ./build-club.mjs && pnpm dlx wrangler@4 deploy --config ./wrangler.jsonc",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

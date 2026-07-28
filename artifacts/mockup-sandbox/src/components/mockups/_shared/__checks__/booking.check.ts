@@ -128,26 +128,26 @@ for (let i = 0; i < TABLES.length; i++) {
   }
 }
 
-const fixtureBoxes: Array<[string, Box]> = [
-  [
-    "stage",
-    {
-      x1: FIXTURES.stage.x,
-      y1: FIXTURES.stage.y,
-      x2: FIXTURES.stage.x + FIXTURES.stage.w,
-      y2: FIXTURES.stage.y + FIXTURES.stage.h,
-    },
-  ],
-  [
-    "bar",
-    {
-      x1: FIXTURES.bar.x,
-      y1: FIXTURES.bar.y,
-      x2: FIXTURES.bar.x + FIXTURES.bar.w,
-      y2: FIXTURES.bar.y + FIXTURES.bar.h,
-    },
-  ],
-];
+const SOLID_FIXTURES = [
+  ["bar", FIXTURES.bar],
+  ["dj", FIXTURES.dj],
+  ["stage", FIXTURES.stage],
+] as const;
+
+const fixtureBoxes: Array<[string, Box]> = SOLID_FIXTURES.map(([name, f]) => [
+  name,
+  { x1: f.x, y1: f.y, x2: f.x + f.w, y2: f.y + f.h },
+]);
+
+// The band across the top only reads as a band if its three blocks do not run
+// into each other.
+for (let i = 0; i < fixtureBoxes.length; i++) {
+  for (let j = i + 1; j < fixtureBoxes.length; j++) {
+    const [an, a] = fixtureBoxes[i]!;
+    const [bn, b] = fixtureBoxes[j]!;
+    check(`${an} clear of ${bn}`, !overlaps(a, b));
+  }
+}
 
 for (const t of TABLES) {
   for (const [name, fb] of fixtureBoxes) {
@@ -480,21 +480,57 @@ check(
   slipFileError({ type: "image/png", size: 6 * 1024 * 1024 } as File) !== null,
 );
 
+for (const [name, f] of SOLID_FIXTURES) {
+  check(
+    `the ${name} is inside the room`,
+    isInsideRoom(f.x, f.y) && isInsideRoom(f.x + f.w, f.y + f.h),
+  );
+}
+
+// Signage used to be drawn on top of the room, where an extinguisher landed on
+// the stage label and made both unreadable. It belongs in the margin now, and
+// these assertions are what keep it there.
+for (const e of FIXTURES.extinguishers) {
+  check(
+    `extinguisher (${e.x},${e.y}) stays out of the room`,
+    !isInsideRoom(e.x, e.y),
+  );
+  check(
+    `extinguisher (${e.x},${e.y}) is on the canvas`,
+    e.x >= 2 && e.x <= CANVAS.w - 2 && e.y >= 3 && e.y <= CANVAS.h - 3,
+  );
+}
+
+/** Mirrors the pill geometry in FloorMap's ExitBadge. */
+function badgeWidth(label: string): number {
+  return label.length * 2 + 6;
+}
+
+for (const x of FIXTURES.exits) {
+  const half = badgeWidth(x.label) / 2;
+  check(
+    `${x.id} badge is not clipped by the canvas`,
+    x.x - half >= 0 &&
+      x.x + half <= CANVAS.w &&
+      x.y + 3.2 <= CANVAS.h &&
+      x.y - 3.2 >= 0,
+    JSON.stringify({ x1: x.x - half, x2: x.x + half, y2: x.y + 3.2 }),
+  );
+  check(
+    `${x.id} badge sits outside the wall it labels`,
+    !isInsideRoom(x.x, x.y),
+  );
+}
+
 check(
-  "the stage is inside the room",
-  isInsideRoom(FIXTURES.stage.x, FIXTURES.stage.y) &&
-    isInsideRoom(
-      FIXTURES.stage.x + FIXTURES.stage.w,
-      FIXTURES.stage.y + FIXTURES.stage.h,
+  "exit badges do not collide with each other",
+  FIXTURES.exits.every((a, i) =>
+    FIXTURES.exits.every(
+      (b, j) =>
+        i === j ||
+        Math.abs(a.x - b.x) > badgeWidth(a.label) / 2 + badgeWidth(b.label) / 2,
     ),
-);
-check(
-  "the bar is inside the room",
-  isInsideRoom(FIXTURES.bar.x, FIXTURES.bar.y) &&
-    isInsideRoom(
-      FIXTURES.bar.x + FIXTURES.bar.w,
-      FIXTURES.bar.y + FIXTURES.bar.h,
-    ),
+  ),
 );
 
 console.log(

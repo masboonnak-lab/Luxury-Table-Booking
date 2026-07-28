@@ -89,26 +89,21 @@ function ExitBadge({
 }) {
   const bg = tone === "danger" ? "hsl(5 62% 45%)" : "hsl(38 58% 56%)";
   const fg = tone === "danger" ? "hsl(0 0% 98%)" : "hsl(30 12% 8%)";
-  const width = label.length * 2.1 + 5;
+  // Thai glyphs are narrower than the Latin average, so 2.0 per character
+  // leaves a comfortable pill rather than a tight one.
+  const width = label.length * 2 + 6;
 
   return (
     <g aria-hidden>
       <rect
         x={x - width / 2}
-        y={y - 3}
+        y={y - 3.2}
         width={width}
-        height={6}
-        rx={3}
+        height={6.4}
+        rx={3.2}
         fill={bg}
       />
-      <text
-        x={x}
-        y={y + 1.3}
-        textAnchor="middle"
-        fontSize={3.4}
-        fill={fg}
-        style={{ letterSpacing: "0.06em" }}
-      >
+      <text x={x} y={y + 1.4} textAnchor="middle" fontSize={3.6} fill={fg}>
         {label}
       </text>
     </g>
@@ -176,49 +171,48 @@ export function FloorMap({
               strokeLinejoin="round"
             />
 
-            {/* Stage */}
-            <rect
-              x={FIXTURES.stage.x}
-              y={FIXTURES.stage.y}
-              width={FIXTURES.stage.w}
-              height={FIXTURES.stage.h}
-              rx={1.5}
-              fill="hsl(30 8% 14%)"
-              stroke="hsl(38 58% 56% / 0.35)"
-              strokeWidth={0.5}
-            />
-            <text
-              x={FIXTURES.stage.x + FIXTURES.stage.w / 2}
-              y={FIXTURES.stage.y + FIXTURES.stage.h / 2 + 1.6}
-              textAnchor="middle"
-              fontSize={4.4}
-              fill="hsl(40 26% 88%)"
-              style={{ letterSpacing: "0.28em" }}
-            >
-              {FIXTURES.stage.label}
-            </text>
+            {/* Walkways, laid down first so the tables sit on top of them */}
+            {FIXTURES.walkways.map((w) => (
+              <rect
+                key={w.id}
+                x={w.x}
+                y={w.y}
+                width={w.w}
+                height={w.h}
+                rx={2}
+                fill="hsl(38 58% 56% / 0.07)"
+                stroke="hsl(38 58% 56% / 0.22)"
+                strokeWidth={0.3}
+                strokeDasharray="2 1.6"
+              />
+            ))}
 
-            {/* Bar */}
-            <rect
-              x={FIXTURES.bar.x}
-              y={FIXTURES.bar.y}
-              width={FIXTURES.bar.w}
-              height={FIXTURES.bar.h}
-              rx={1.5}
-              fill="hsl(30 8% 14%)"
-              stroke="hsl(32 9% 24%)"
-              strokeWidth={0.5}
-            />
-            <text
-              x={FIXTURES.bar.x + FIXTURES.bar.w / 2}
-              y={FIXTURES.bar.y + FIXTURES.bar.h / 2 + 1.6}
-              textAnchor="middle"
-              fontSize={4.4}
-              fill="hsl(40 20% 80%)"
-              style={{ letterSpacing: "0.28em" }}
-            >
-              {FIXTURES.bar.label}
-            </text>
+            {/* Bar, booth and stage — one band across the top */}
+            {[FIXTURES.bar, FIXTURES.dj, FIXTURES.stage].map((f) => (
+              <g key={f.label}>
+                <rect
+                  x={f.x}
+                  y={f.y}
+                  width={f.w}
+                  height={f.h}
+                  rx={1.6}
+                  fill="hsl(30 8% 15%)"
+                  stroke="hsl(38 58% 56% / 0.32)"
+                  strokeWidth={0.5}
+                />
+                {/* No letter-spacing on Thai: it detaches vowels and tone
+                    marks from their consonant, so "เวที" renders as "เว ที". */}
+                <text
+                  x={f.x + f.w / 2}
+                  y={f.y + f.h / 2 + 1.9}
+                  textAnchor="middle"
+                  fontSize={5.2}
+                  fill="hsl(40 26% 88%)"
+                >
+                  {f.label}
+                </text>
+              </g>
+            ))}
 
             {FIXTURES.extinguishers.map((e) => (
               <Extinguisher key={`${e.x}-${e.y}`} x={e.x} y={e.y} />
