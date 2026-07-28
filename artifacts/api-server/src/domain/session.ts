@@ -32,7 +32,12 @@ export function cookieOptions(expiresAt: Date): CookieOptions {
     // SameSite=None and HTTPS on both ends — change it deliberately, not by
     // discovering sign-in silently fails in one browser.
     sameSite: "lax",
-    secure: process.env["NODE_ENV"] === "production",
+    // Secure unless explicitly switched off, rather than only when NODE_ENV
+    // says production. Keying it on NODE_ENV meant the flag was quietly absent
+    // on a server that was already answering the public internet — the failure
+    // is invisible until someone is reading traffic. Browsers treat localhost
+    // as trustworthy, so ordinary local development still works.
+    secure: process.env["COOKIE_INSECURE"] !== "1",
     path: "/",
     expires: expiresAt,
   };
