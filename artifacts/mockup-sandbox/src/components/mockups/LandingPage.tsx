@@ -1,6 +1,7 @@
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   BookOpen,
+  ChevronLeft,
   Clock,
   ExternalLink,
   Facebook,
@@ -83,16 +84,86 @@ const LINEUP = [
   { day: "ศุกร์ – เสาร์", act: "Live Band 21:30 น." },
 ];
 
+/**
+ * The booking flow used to sit at the bottom of the landing page, where every
+ * visitor scrolled through a five-step form they had not asked for. It is its
+ * own screen now, reached only by pressing จองโต๊ะ.
+ */
+function BookingScreen({ onBack }: { onBack: () => void }) {
+  return (
+    <div className="min-h-screen">
+      <div className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center gap-3 px-6 py-4">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs uppercase tracking-[0.15em] text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+          >
+            <ChevronLeft className="size-3.5" />
+            กลับ
+          </button>
+          <div className="min-w-0 flex-1 text-center">
+            <p className="truncate text-sm uppercase tracking-[0.3em]">
+              {VENUE.name}
+            </p>
+          </div>
+          {/* Balances the back button so the name stays centred. */}
+          <div className="w-[74px] shrink-0" aria-hidden />
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-5xl px-6 py-12">
+        <div className="mb-10 text-center">
+          <Eyebrow>สำรองโต๊ะ</Eyebrow>
+          <h2 className="mt-4 font-['Playfair_Display',serif] text-3xl font-medium">
+            จองและชำระมัดจำใน 5 ขั้นตอน
+          </h2>
+        </div>
+
+        <BookingFlow />
+      </div>
+    </div>
+  );
+}
+
 export default function LandingPage() {
-  const bookingRef = useRef<HTMLElement>(null);
+  const [booking, setBooking] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // scrollIntoView rather than an #anchor: `scroll-behavior` would have to live
-  // on <html>, which a preview-mounted component does not own.
-  function scrollToBooking() {
-    bookingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  // A history entry, so a phone's back gesture leaves the booking form instead
+  // of leaving the site.
+  useEffect(() => {
+    if (!booking) {
+      return;
+    }
+    window.history.pushState({ booking: true }, "");
+    const onPop = () => setBooking(false);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [booking]);
+
+  function openBooking() {
+    setBooking(true);
+    setMenuOpen(false);
+    setAuthOpen(false);
+    window.scrollTo({ top: 0 });
   }
+
+  function closeBooking() {
+    setBooking(false);
+    window.scrollTo({ top: 0 });
+  }
+
+  if (booking) {
+    return (
+      <BarTheme className="min-h-screen">
+        <BookingScreen onBack={closeBooking} />
+      </BarTheme>
+    );
+  }
+
+  const scrollToBooking = openBooking;
 
   return (
     <BarTheme className="min-h-screen">
@@ -314,20 +385,6 @@ export default function LandingPage() {
               </li>
             ))}
           </ul>
-        </div>
-      </section>
-
-      {/* Booking */}
-      <section ref={bookingRef} className="scroll-mt-20 bg-[hsl(30_9%_8%)]">
-        <div className="mx-auto max-w-5xl px-6 py-20">
-          <div className="mb-10 text-center">
-            <Eyebrow>สำรองโต๊ะ</Eyebrow>
-            <h2 className="mt-4 font-['Playfair_Display',serif] text-3xl font-medium">
-              จองและชำระมัดจำใน 5 ขั้นตอน
-            </h2>
-          </div>
-
-          <BookingFlow />
         </div>
       </section>
 
