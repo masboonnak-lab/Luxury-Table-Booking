@@ -9,6 +9,8 @@ A table-reservation and event-ticket app for a Bangkok cocktail bar: pick a nigh
 - `PORT=5173 BASE_PATH=/ pnpm --filter @workspace/mockup-sandbox run dev` — the UI mockups, at `/preview/<ComponentName>`
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
+- `pnpm run check` — typecheck plus the booking and floor-plan assertions
+- `pnpm run deploy` — check, build and publish the landing page to `sovereign-os.online/entertainment/club`
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - `pnpm --filter @workspace/db run generate` — regenerate `lib/db/drizzle/*.sql`, a plain SQL file that creates every table from scratch
@@ -65,7 +67,8 @@ A table-reservation and event-ticket app for a Bangkok cocktail bar: pick a nigh
 - **On Windows set `HOST=::`** for the Vite sandbox, or `localhost` resolves to IPv6 and the `0.0.0.0` bind refuses the connection.
 - The mockups' `_shared/booking.ts` and the server's `domain/money.ts` implement the same deposit and VAT rules. If one moves, move the other.
 - **The room exists twice**: `_shared/floor.ts` (what the map draws) and `api-server/src/seed.ts` (what the API serves). They must stay identical. `booking.check.ts` asserts the mockup copy is sane — no overlapping tables, nothing through a wall, whole-number coordinates because the DB columns are integers — but nothing yet compares the two files, so changing one means changing both by hand.
-- **Every push to `main` deploys the landing page** via `.github/workflows/deploy-landing.yml`, gated on typecheck and the booking checks. It needs the `CLOUDFLARE_API_TOKEN` repository secret.
+- **Committing on `main` publishes the landing page.** `.githooks/post-commit` runs `pnpm run deploy` — typecheck, booking checks, build, ship — so the live site never drifts behind this machine. Skip one with `NO_DEPLOY=1 git commit …`; turn it off with `git config --unset core.hooksPath`. A fresh clone needs `git config core.hooksPath .githooks` once.
+- `.github/workflows/deploy-landing.yml` runs the same checks on every push and deploys too, but only once `CLOUDFLARE_API_TOKEN` exists as a repository secret. Without it the job warns and skips the deploy rather than failing, because the hook has already published.
 - `lib/db/src/index.ts` throws at import time when `DATABASE_URL` is unset, so anything importing `@workspace/db` needs it — including the seed.
 
 ## Pointers

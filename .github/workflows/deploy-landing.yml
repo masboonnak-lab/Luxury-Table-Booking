@@ -46,27 +46,30 @@ jobs:
         run: pnpm --filter @workspace/mockup-sandbox run build:club
 
       - name: Check Cloudflare credentials
-        # Fail here with an explanation rather than letting wrangler die with
-        # an opaque auth error.
+        id: creds
+        # Without the secret this job cannot deploy, but the local post-commit
+        # hook already publishes from the dev machine — so warn loudly and let
+        # the checks above still count, rather than failing every push.
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
-            echo "::error::Missing repository secret CLOUDFLARE_API_TOKEN."
-            echo "Add it under Settings > Secrets and variables > Actions."
-            echo "Create the token at dash.cloudflare.com with the 'Edit Cloudflare Workers' template."
-            echo "Add CLOUDFLARE_ACCOUNT_ID the same way if the token covers more than one account."
-            exit 1
+            echo "::warning::No CLOUDFLARE_API_TOKEN secret — skipping deploy. Checks passed. Add the secret under Settings > Secrets and variables > Actions (create it at dash.cloudflare.com with the 'Edit Cloudflare Workers' template) to deploy from CI."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Deploy to Cloudflare
+        if: steps.creds.outputs.present == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: pnpm dlx wrangler@4 deploy --config artifacts/mockup-sandbox/wrangler.jsonc
 
       - name: Verify the site is live
-        # Deploying without checking is how a broken route goes unnoticed.
+        # Runs even when this job did not deploy: the local hook may have, and
+        # a landing page that stopped answering is worth knowing about either way.
         run: |
           for i in 1 2 3 4 5; do
             code=$(curl -s -o /dev/null -w '%{http_code}' https://sovereign-os.online/entertainment/club/)
@@ -77,5 +80,5 @@ jobs:
             echo "attempt $i: HTTP $code — retrying"
             sleep 10
           done
-          echo "site did not return 200 after deploy"
+          echo "::error::The landing page did not return 200"
           exit 1

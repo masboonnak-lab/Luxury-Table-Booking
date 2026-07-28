@@ -1,0 +1,34 @@
+#!/bin/sh
+# Publishes the landing page as soon as a commit lands on main, so the live
+# site never drifts behind this machine.
+#
+# This is the local half of the deploy story. GitHub Actions does the same
+# thing on push, but only once CLOUDFLARE_API_TOKEN exists as a repository
+# secret; this hook works today because wrangler is already logged in here.
+#
+# Skip a one-off deploy with:  NO_DEPLOY=1 git commit ...
+# Turn the hook off entirely:  git config --unset core.hooksPath
+
+[ "$NO_DEPLOY" = "1" ] && exit 0
+
+branch=$(git rev-parse --abbrev-ref HEAD)
+if [ "$branch" != "main" ]; then
+  echo "post-commit: on '$branch', not main — skipping deploy"
+  exit 0
+fi
+
+echo ""
+echo "post-commit: checking and publishing the landing page…"
+
+# `pnpm run deploy` typechecks and runs the booking assertions first, so a
+# broken commit cannot replace a working site.
+if pnpm run deploy; then
+  echo "post-commit: live at https://sovereign-os.online/entertainment/club/"
+else
+  # A non-zero exit here would not undo the commit anyway, so say plainly what
+  # the state is rather than failing quietly.
+  echo "" >&2
+  echo "post-commit: DEPLOY FAILED — the commit is saved, but the live site" >&2
+  echo "             still serves the previous version. Fix, then re-run:" >&2
+  echo "               pnpm run deploy" >&2
+fi
